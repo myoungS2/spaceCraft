@@ -20,6 +20,8 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
 6. **기하 연산은 순수 함수**로 `src/geometry/`에 두고 `*.test.ts`로 테스트.
 7. 드래그 하나 = 히스토리 1건 (zundo pause/resume).
 8. 텍스트/숫자 입력은 Enter·blur 시에만 문서에 반영(글자마다 히스토리 금지).
+9. 실행취소/다시실행은 `store/actions.ts`의 `undo`/`redo`를 쓴다(드래그 중 차단, 사라진 선택 해제). JSON 불러오기(`importDocFile`)도 히스토리에 남아 실행취소할 수 있다.
+10. 새 편집 기능을 추가하면 `store/history.test.ts`의 `editEverything`에 한 단계를 추가해 히스토리 1건인지 확인한다.
 
 ## 문서 스키마 요약 (`src/model/schema.ts`가 원본)
 - `schemaVersion`(현재 1), `unit: "mm"`, `floors[]`(MVP는 floors[0]만 UI 노출), `settings.gridSnap`

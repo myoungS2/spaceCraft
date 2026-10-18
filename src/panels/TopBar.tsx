@@ -1,5 +1,7 @@
+import { useRef } from 'react'
 import { useStore } from 'zustand'
-import { docHistory, useDocStore } from '../store/docStore'
+import { exportDocFile, importDocFile, redo, undo } from '../store/actions'
+import { useDocStore } from '../store/docStore'
 import { useUiStore, type SaveStatus } from '../store/uiStore'
 
 const saveLabel: Record<SaveStatus, string> = {
@@ -15,19 +17,44 @@ export function TopBar() {
   const saveStatus = useUiStore((s) => s.saveStatus)
   const view = useUiStore((s) => s.view)
   const setView = useUiStore((s) => s.setView)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const onPickFile = async (file: File | undefined) => {
+    if (!file) return
+    const ok = window.confirm(`"${file.name}"(으)로 현재 도면을 바꿀까요?\n실행취소로 되돌릴 수 있습니다.`)
+    if (ok) await importDocFile(file)
+  }
 
   return (
     <header className="topbar">
       <div className="brand">Roomie</div>
       <div className="group">
-        <button onClick={() => docHistory().undo()} disabled={!canUndo} title="실행취소 (Ctrl/Cmd+Z)">
+        <button onClick={undo} disabled={!canUndo} title="실행취소 (Ctrl/Cmd+Z)">
           ↶ 실행취소
         </button>
-        <button onClick={() => docHistory().redo()} disabled={!canRedo} title="다시실행 (Ctrl/Cmd+Shift+Z)">
+        <button onClick={redo} disabled={!canRedo} title="다시실행 (Ctrl/Cmd+Shift+Z)">
           ↷ 다시실행
         </button>
       </div>
       <span className={`save-status ${saveStatus}`}>{saveLabel[saveStatus]}</span>
+      <div className="group">
+        <button onClick={exportDocFile} title="도면을 JSON 파일로 저장">
+          내보내기
+        </button>
+        <button onClick={() => fileRef.current?.click()} title="JSON 파일에서 도면 불러오기">
+          불러오기
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => {
+            void onPickFile(e.target.files?.[0])
+            e.target.value = '' // 같은 파일을 다시 고를 수 있게
+          }}
+        />
+      </div>
       <div className="spacer" />
       <div className="segmented" role="tablist" aria-label="보기 전환">
         <button role="tab" aria-selected={view === '2d'} onClick={() => setView('2d')}>

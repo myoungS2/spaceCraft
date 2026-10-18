@@ -3,8 +3,10 @@ import { deleteOpening, findOpening } from '../geometry/openings'
 import { snapToGrid } from '../geometry/snap'
 import type { Vec } from '../geometry/vec'
 import { deleteCorner, deleteWall } from '../geometry/walls'
-import { selectFloor, useDocStore } from './docStore'
-import { useUiStore } from './uiStore'
+import { deserializeDoc, exportFileName, serializeDoc } from '../model/io'
+import type { Floor } from '../model/schema'
+import { docHistory, isInGesture, selectFloor, useDocStore } from './docStore'
+import { useUiStore, type Selection } from './uiStore'
 
 /** 문서와 UI 상태를 함께 다루는 편집 명령. 키보드 단축키와 패널 버튼이 같이 쓴다. */
 export function deleteSelection() {
@@ -65,4 +67,67 @@ export function duplicateSelectedItem() {
   if (!r.itemId) return
   useDocStore.getState().updateFloor(() => r.floor)
   select({ kind: 'item', id: r.itemId })
+}
+
+/** 현재 문서를 JSON 파일로 내려받는다. */
+export function exportDocFile() {
+  const blob = new Blob([serializeDoc(useDocStore.getState().doc)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = exportFileName()
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 0)
+}
+
+/**
+ * JSON 파일을 검증(migrate + zod)한 뒤 현재 문서를 바꾼다.
+ * 히스토리에 남기므로 실행취소로 불러오기 전 도면으로 돌아갈 수 있다.
+ */
+export async function importDocFile(file: File): Promise<boolean> {
+  const ui = useUiStore.getState()
+  const result = deserializeDoc(await file.text())
+  if (!result.ok) {
+    ui.setBanner(`"${file.name}"을(를) 불러오지 못했습니다. ${result.error}`)
+    return false
+  }
+  ui.select(null)
+  ui.setBanner(null)
+  useDocStore.getState().replaceDoc(result.doc)
+  return true
+}
+
+/** 선택한 대상이 문서에 아직 있는지(실행취소로 사라졌을 수 있다) */
+export function selectionExists(floor: Floor, selection: Selection): boolean {
+  if (!selection) return true
+  switch (selection.kind) {
+    case 'wall':
+      return floor.walls.some((w) => w.id === selection.id)
+    case 'corner':
+      return floor.corners.some((c) => c.id === selection.id)
+    case 'opening':
+      return findOpening(floor, selection.id) !== undefined
+    case 'room':
+      return floor.rooms.some((r) => r.id === selection.id)
+    case 'item':
+      return floor.items.some((i) => i.id === selection.id)
+  }
+}
+
+function afterHistoryMove() {
+  const { selection, select } = useUiStore.getState()
+  if (!selectionExists(selectFloor(useDocStore.getState()), selection)) select(null)
+}
+
+/** 드래그 중에는 막는다(제스처 스냅샷과 섞이지 않도록). */
+export function undo() {
+  if (isInGesture()) return
+  docHistory().undo()
+  afterHistoryMove()
+}
+
+export function redo() {
+  if (isInGesture()) return
+  docHistory().redo()
+  afterHistoryMove()
 }
