@@ -30,3 +30,13 @@ export const worldToPlan = (wx: number, wz: number): { x: number; y: number } =>
  * y-down 평면의 시계 방향 회전은 위에서 본 3D(y-up)에서 -Y축 회전과 같다.
  */
 export const planRotationToWorldY = (deg: number): number => (-deg * Math.PI) / 180
+
+/** 2D 평면의 방향 벡터(dx, dy)를, 로컬 +X축이 그 방향을 향하게 하는 3D Y축 회전(rad)으로 */
+export const planDirectionToWorldY = (dx: number, dy: number): number => Math.atan2(-dy, dx)
+
+/**
+ * 바닥 다각형용 THREE.Shape 좌표(m). Shape는 XY 평면에 만들어지므로
+ * (x, -y)로 넣고 메시를 X축으로 -90° 돌리면 (x, 0, y)가 되고 면이 위(+Y)를 향한다.
+ */
+export const FLOOR_SHAPE_ROTATION_X = -Math.PI / 2
+export const planToFloorShape = (x: number, y: number): [number, number] => [mmToM(x), -mmToM(y)]

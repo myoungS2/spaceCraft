@@ -35,7 +35,8 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
 ## 폴더
 - `src/model` 스키마·기본값·migrate·id / `src/store` docStore·uiStore·persistence
 - `src/geometry` 순수 기하 함수 / `src/utils/coords.ts` 좌표 변환
-- `src/editor2d` Konva 2D / `src/viewer3d` R3F 3D / `src/panels` UI 패널 / `src/hooks`
+- `src/editor2d` Konva 2D / `src/viewer3d` R3F 3D(첫 전환 시 lazy 로드) / `src/panels` UI 패널 / `src/hooks`
+- 3D 벽: `viewer3d/wallOutline.ts`가 벽 측면 외곽선을 만든다. 바닥·천장에 닿는 개구부는 hole이 아니라 외곽선을 파내고(notch), 떠 있는 창만 hole. `WallMesh`는 memo로 wall·corner 참조가 바뀐 벽만 다시 만든다.
 - `src/data/catalog.json` 가구 카탈로그, GLB는 `public/models/` (CC0만, 출처는 CREDITS.md)
 
 ## TODO
