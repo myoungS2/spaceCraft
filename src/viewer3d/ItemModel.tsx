@@ -4,6 +4,7 @@ import { Box3, Vector3, type Mesh, type Object3D } from 'three'
 import { catalogEntry } from '../data/catalog'
 import { itemDims, type Dims } from '../geometry/items'
 import type { Item } from '../model/schema'
+import { useDocStore } from '../store/docStore'
 import { mmToM, planRotationToWorldY, planToWorld } from '../utils/coords'
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -72,7 +73,8 @@ function GlbModel({ url, dims }: { url: string; dims: Dims }) {
 
 /** 가구 하나. 위치·회전은 coords.ts 변환을 거친다. */
 export const ItemModel = memo(function ItemModel({ item }: { item: Item }) {
-  const entry = catalogEntry(item.catalogId)
+  const custom = useDocStore((s) => s.doc.customCatalog)
+  const entry = catalogEntry(item.catalogId, custom)
   const dims = itemDims(item, entry)
   const fallback = <BoxFallback dims={dims} color={CATEGORY_COLORS[entry.category] ?? '#b0b5bd'} />
 

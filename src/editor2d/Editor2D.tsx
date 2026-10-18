@@ -85,6 +85,7 @@ export function Editor2D() {
   const tool = useUiStore((s) => s.tool)
   const selection = useUiStore((s) => s.selection)
   const floor = useDocStore(selectFloor)
+  const customCatalog = useDocStore((s) => s.doc.customCatalog)
   const gridSnap = useDocStore((s) => s.doc.settings.gridSnap)
   const segments = useMemo(() => wallSegments(floor), [floor])
   const rooms = useMemo<RoomView[]>(() => {
@@ -472,7 +473,7 @@ export function Editor2D() {
             <DimensionLines segments={segments} rooms={roomPolygons} px={px} />
             <RoomLabels rooms={rooms} px={px} />
             {/* 가구는 방 이름 위에 그린다(겹치면 가구 이름이 읽히도록) */}
-            <ItemShapes items={floor.items} selection={selection} px={px} interactive={mode === 'furniture'} />
+            <ItemShapes items={floor.items} custom={customCatalog} selection={selection} px={px} interactive={mode === 'furniture'} />
             {mode === 'draw' && tool === 'select' && (
               <CornerHandles corners={floor.corners} selection={selection} px={px} />
             )}

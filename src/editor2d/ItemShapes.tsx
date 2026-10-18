@@ -1,7 +1,7 @@
 import { Circle, Group, Line, Rect, Text } from 'react-konva'
 import { catalogEntry } from '../data/catalog'
 import { itemDims } from '../geometry/items'
-import type { Item } from '../model/schema'
+import type { CustomFurniture, Item } from '../model/schema'
 import type { Selection } from '../store/uiStore'
 import { COLORS } from './WallShapes'
 
@@ -10,17 +10,19 @@ export const ROTATE_HANDLE_PX = 22
 
 interface Props {
   items: Item[]
+  /** 문서의 사용자 가구 종류(doc.customCatalog) */
+  custom: readonly CustomFurniture[]
   selection: Selection
   px: number
   interactive: boolean
 }
 
 /** 2D 가구: 회전된 바운딩박스 + 이름. 선택되면 회전 핸들을 보여준다. */
-export function ItemShapes({ items, selection, px, interactive }: Props) {
+export function ItemShapes({ items, custom, selection, px, interactive }: Props) {
   return (
     <Group listening={interactive} opacity={interactive ? 1 : 0.6}>
       {items.map((item) => {
-        const entry = catalogEntry(item.catalogId)
+        const entry = catalogEntry(item.catalogId, custom)
         const { width, depth } = itemDims(item, entry)
         const selected = selection?.kind === 'item' && selection.id === item.id
         const fontSize = Math.min(12 * px, depth / 3, width / 4)

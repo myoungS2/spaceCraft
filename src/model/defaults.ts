@@ -23,5 +23,6 @@ export function createEmptyDoc(): Doc {
     unit: 'mm',
     floors: [createFloor()],
     settings: { gridSnap: DEFAULT_GRID_SNAP },
+    customCatalog: [],
   }
 }

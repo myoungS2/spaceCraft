@@ -149,7 +149,8 @@ input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent-
   cursor: grab;
 }
 .catalog-item:hover { border-color: var(--accent-fill); background: var(--accent-soft); }
-.catalog-item .dims { color: var(--muted); font-size: 11px; }
+.catalog-item { gap: 8px; }
+.catalog-item .dims { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .catalog .empty { color: var(--muted); font-size: 12px; }
 
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
@@ -208,3 +209,35 @@ select {
 }
 
 input:disabled { background: var(--bg); color: var(--muted); }
+
+.add-furniture { border-style: dashed; color: var(--accent); font-weight: 700; }
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--accent-fill);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+.add-form input { background: var(--surface); }
+.field-row.three { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.field-row.three input { padding: 6px; min-width: 0; }
+.form-error { margin: 0; font-size: 12px; color: var(--danger); }
+.form-actions { display: flex; justify-content: flex-end; gap: 6px; }
+button.primary { background: var(--accent-fill); border-color: var(--accent-fill); color: #fff; font-weight: 700; }
+button.primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
+.catalog-row { display: flex; gap: 4px; align-items: stretch; }
+.catalog-row .catalog-item { flex: 1; min-width: 0; }
+.catalog-remove { padding: 0 8px; color: var(--muted); }
+.catalog-remove:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+.mine-tag {
+  margin-left: 6px;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--brand-pink);
+  color: #9a3765;
+  font-size: 10px;
+  font-weight: 700;
+}

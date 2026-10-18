@@ -1,6 +1,9 @@
-import { useMemo, useState } from 'react'
-import { catalog, catalogCategories, CATALOG_DRAG_TYPE } from '../data/catalog'
+import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
+import { catalogCategories, CATALOG_DRAG_TYPE, fullCatalog } from '../data/catalog'
+import { createCustomFurniture, isCustomFurnitureInUse, removeCustomFurniture } from '../model/customCatalog'
+import type { CustomFurniture } from '../model/schema'
 import { placeCatalogItem } from '../store/actions'
+import { useDocStore } from '../store/docStore'
 import { useUiStore, type DrawTool, type EditorMode } from '../store/uiStore'
 
 const modes: { id: EditorMode; label: string }[] = [
@@ -78,11 +81,18 @@ function DrawHelp() {
 function Catalog() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+  const custom = useDocStore((s) => s.doc.customCatalog)
+  const doc = useDocStore((s) => s.doc)
+  const updateCustomCatalog = useDocStore((s) => s.updateCustomCatalog)
 
+  const entries = useMemo(() => fullCatalog(custom), [custom])
+  const categories = useMemo(() => catalogCategories(entries), [entries])
+  const customIds = useMemo(() => new Set(custom.map((c) => c.id)), [custom])
   const items = useMemo(() => {
     const q = query.trim()
-    return catalog.filter((e) => (!category || e.category === category) && (!q || e.name.includes(q)))
-  }, [query, category])
+    return entries.filter((e) => (!category || e.category === category) && (!q || e.name.includes(q)))
+  }, [entries, query, category])
 
   return (
     <div className="panel-body">
@@ -98,34 +108,137 @@ function Catalog() {
         <button aria-pressed={category === null} onClick={() => setCategory(null)}>
           전체
         </button>
-        {catalogCategories.map((c) => (
+        {categories.map((c) => (
           <button key={c} aria-pressed={category === c} onClick={() => setCategory(c)}>
             {c}
           </button>
         ))}
       </div>
+      {adding ? (
+        <AddFurnitureForm
+          categories={categories}
+          defaultCategory={category ?? ''}
+          onDone={(entry) => {
+            setAdding(false)
+            if (entry) setCategory(entry.category)
+          }}
+        />
+      ) : (
+        <button className="add-furniture" onClick={() => setAdding(true)}>
+          ＋ 가구 종류 추가
+        </button>
+      )}
       <ul className="catalog">
-        {items.map((e) => (
-          <li key={e.id}>
-            <button
-              className="catalog-item"
-              draggable
-              title="캔버스로 끌어다 놓거나 클릭해서 화면 가운데에 배치"
-              onDragStart={(ev) => {
-                ev.dataTransfer.setData(CATALOG_DRAG_TYPE, e.id)
-                ev.dataTransfer.effectAllowed = 'copy'
-              }}
-              onClick={() => placeCatalogItem(e.id)}
-            >
-              <span className="name">{e.name}</span>
-              <span className="dims">
-                {e.width}×{e.depth}×{e.height}
-              </span>
-            </button>
-          </li>
-        ))}
+        {items.map((e) => {
+          const mine = customIds.has(e.id)
+          const inUse = mine && isCustomFurnitureInUse(doc, e.id)
+          return (
+            <li key={e.id} className="catalog-row">
+              <button
+                className="catalog-item"
+                draggable
+                title="캔버스로 끌어다 놓거나 클릭해서 화면 가운데에 배치"
+                onDragStart={(ev) => {
+                  ev.dataTransfer.setData(CATALOG_DRAG_TYPE, e.id)
+                  ev.dataTransfer.effectAllowed = 'copy'
+                }}
+                onClick={() => placeCatalogItem(e.id)}
+              >
+                <span className="name">
+                  {e.name}
+                  {mine && <span className="mine-tag">내 가구</span>}
+                </span>
+                <span className="dims">
+                  {e.width}×{e.depth}×{e.height}
+                </span>
+              </button>
+              {mine && (
+                <button
+                  className="catalog-remove"
+                  disabled={inUse}
+                  title={inUse ? '도면에 놓인 가구가 있어 지울 수 없습니다' : '이 가구 종류 삭제'}
+                  aria-label={`${e.name} 종류 삭제`}
+                  onClick={() => updateCustomCatalog((list, d) => removeCustomFurniture(list, d, e.id))}
+                >
+                  ×
+                </button>
+              )}
+            </li>
+          )
+        })}
         {items.length === 0 && <li className="empty">검색 결과가 없습니다.</li>}
       </ul>
     </div>
+  )
+}
+
+/** 사용자 가구 종류 추가 폼. 추가 버튼을 눌렀을 때만 문서에 반영한다(히스토리 1건). */
+function AddFurnitureForm({
+  categories,
+  defaultCategory,
+  onDone,
+}: {
+  categories: string[]
+  defaultCategory: string
+  onDone: (entry?: CustomFurniture) => void
+}) {
+  const [form, setForm] = useState({ name: '', category: defaultCategory, width: '1000', depth: '600', height: '800' })
+  const [error, setError] = useState<string | null>(null)
+  const updateCustomCatalog = useDocStore((s) => s.updateCustomCatalog)
+  const field = (key: keyof typeof form) => ({
+    value: form[key],
+    onChange: (e: ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value })),
+  })
+
+  const submit = (ev: FormEvent) => {
+    ev.preventDefault()
+    const r = createCustomFurniture({
+      name: form.name,
+      category: form.category,
+      width: Number(form.width),
+      depth: Number(form.depth),
+      height: Number(form.height),
+    })
+    if (!r.ok) {
+      setError(r.error)
+      return
+    }
+    updateCustomCatalog((list) => [...list, r.entry])
+    onDone(r.entry)
+  }
+
+  return (
+    <form className="add-form" onSubmit={submit}>
+      <label className="field">
+        이름
+        <input autoFocus placeholder="예: 2인용 소파" {...field('name')} />
+      </label>
+      <label className="field">
+        카테고리
+        <input list="furniture-categories" placeholder="고르거나 새로 입력" {...field('category')} />
+        <datalist id="furniture-categories">
+          {categories.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </label>
+      <div className="field-row three">
+        {(['width', 'depth', 'height'] as const).map((k) => (
+          <label key={k} className="field">
+            {k === 'width' ? '폭' : k === 'depth' ? '깊이' : '높이'} (mm)
+            <input type="number" min={1} step={1} inputMode="numeric" {...field(k)} />
+          </label>
+        ))}
+      </div>
+      {error && <p className="form-error">{error}</p>}
+      <div className="form-actions">
+        <button type="button" onClick={() => onDone()}>
+          취소
+        </button>
+        <button type="submit" className="primary">
+          추가
+        </button>
+      </div>
+    </form>
   )
 }

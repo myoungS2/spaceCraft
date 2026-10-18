@@ -159,8 +159,9 @@ function OpeningProps({ openingId }: { openingId: string }) {
 function ItemProps({ itemId }: { itemId: string }) {
   const item = useDocStore((s) => selectFloor(s).items.find((i) => i.id === itemId))
   const updateFloor = useDocStore((s) => s.updateFloor)
+  const custom = useDocStore((s) => s.doc.customCatalog)
   if (!item) return null
-  const entry = catalogEntry(item.catalogId)
+  const entry = catalogEntry(item.catalogId, custom)
   const dims = itemDims(item, entry)
   const locked = item.locked
   const patch = (p: ItemPatch) => updateFloor((f) => updateItem(f, itemId, p))

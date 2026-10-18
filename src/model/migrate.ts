@@ -8,7 +8,10 @@ export type ParseResult =
  * 버전별 변환 단계. key 버전의 문서를 key+1 버전으로 바꾼다.
  * 예: schemaVersion 2를 만들면 `1: (d) => ({ ...d, schemaVersion: 2, ... })` 추가.
  */
-const steps: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {}
+const steps: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  // v2: 사용자 가구 종류(customCatalog) 추가
+  1: (d) => ({ ...d, schemaVersion: 2, customCatalog: [] }),
+}
 
 /** 알 수 없는 입력을 최신 버전 문서로 올린 뒤 zod로 검증한다. 예외를 던지지 않는다. */
 export function parseDoc(raw: unknown): ParseResult {

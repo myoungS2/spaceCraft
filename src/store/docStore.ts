@@ -3,7 +3,7 @@ import { temporal } from 'zundo'
 import { clampOpenings } from '../geometry/openings'
 import { syncRooms } from '../geometry/rooms'
 import { createEmptyDoc } from '../model/defaults'
-import type { Doc, Floor, Settings } from '../model/schema'
+import type { CustomFurniture, Doc, Floor, Settings } from '../model/schema'
 
 /**
  * 진실원천인 도면 문서 store. 모든 편집은 여기 액션을 거쳐 불변 업데이트한다.
@@ -16,6 +16,8 @@ export interface DocState {
   /** 현재 층(MVP는 floors[0])을 불변 업데이트한다. 벽 구조가 바뀌면 rooms를 자동으로 다시 계산한다. */
   updateFloor: (recipe: (floor: Floor) => Floor) => void
   updateSettings: (patch: Partial<Settings>) => void
+  /** 사용자 가구 종류 목록을 불변 업데이트한다. 같은 참조를 돌려주면 변경 없음. */
+  updateCustomCatalog: (recipe: (list: CustomFurniture[], doc: Doc) => CustomFurniture[]) => void
 }
 
 export const useDocStore = create<DocState>()(
@@ -36,6 +38,11 @@ export const useDocStore = create<DocState>()(
         }),
       updateSettings: (patch) =>
         set((s) => ({ doc: { ...s.doc, settings: { ...s.doc.settings, ...patch } } })),
+      updateCustomCatalog: (recipe) =>
+        set((s) => {
+          const next = recipe(s.doc.customCatalog, s.doc)
+          return next === s.doc.customCatalog ? s : { doc: { ...s.doc, customCatalog: next } }
+        }),
     }),
     {
       partialize: (s) => ({ doc: s.doc }),

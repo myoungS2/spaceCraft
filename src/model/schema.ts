@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 /** 현재 문서 스키마 버전. 바꾸면 migrate.ts에 변환 단계를 추가한다. */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /** 길이는 모두 정수 mm */
 const mm = z.number().int()
@@ -71,6 +71,16 @@ export const FloorSchema = z.object({
   items: z.array(ItemSchema),
 })
 
+/** 사용자가 직접 추가한 가구 종류. 카탈로그 기본 항목과 같은 id 공간을 쓴다(item.catalogId). */
+export const CustomFurnitureSchema = z.object({
+  id,
+  category: z.string().min(1),
+  name: z.string().min(1),
+  width: positiveMm,
+  depth: positiveMm,
+  height: positiveMm,
+})
+
 export const SettingsSchema = z.object({
   gridSnap: positiveMm,
 })
@@ -80,6 +90,7 @@ export const DocSchema = z.object({
   unit: z.literal('mm'),
   floors: z.array(FloorSchema).min(1),
   settings: SettingsSchema,
+  customCatalog: z.array(CustomFurnitureSchema),
 })
 
 export type Corner = z.infer<typeof CornerSchema>
@@ -89,5 +100,6 @@ export type Wall = z.infer<typeof WallSchema>
 export type Room = z.infer<typeof RoomSchema>
 export type Item = z.infer<typeof ItemSchema>
 export type Floor = z.infer<typeof FloorSchema>
+export type CustomFurniture = z.infer<typeof CustomFurnitureSchema>
 export type Settings = z.infer<typeof SettingsSchema>
 export type Doc = z.infer<typeof DocSchema>

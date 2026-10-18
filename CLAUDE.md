@@ -22,7 +22,8 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
 8. 텍스트/숫자 입력은 Enter·blur 시에만 문서에 반영(글자마다 히스토리 금지).
 
 ## 문서 스키마 요약 (`src/model/schema.ts`가 원본)
-- `schemaVersion`(현재 1), `unit: "mm"`, `floors[]`(MVP는 floors[0]만 UI 노출), `settings.gridSnap`
+- `schemaVersion`(현재 2), `unit: "mm"`, `floors[]`(MVP는 floors[0]만 UI 노출), `settings.gridSnap`
+- `customCatalog[{id,category,name,width,depth,height}]`: 사용자가 가구 탭에서 추가한 가구 종류(id `f_…`). 문서에 들어 있어 JSON·undo와 함께 움직인다. 조회는 `catalogEntry(id, doc.customCatalog)`/`fullCatalog(custom)`, 추가·삭제는 `model/customCatalog.ts`(도면에 놓인 종류는 삭제 불가). 3D는 박스로 그린다(GLB 업로드 없음)
 - floor: `height`, `corners[{id,x,y}]`, `walls[{id,start,end,thickness,height?,openings[]}]`, `rooms[]`, `items[]`
 - opening: `offset` = 벽 start corner → 개구부 **중심** 거리(중심선 기준), `sill`(door는 0), door 전용 `hingeAtEnd?`·`swingReverse?`
   배치·이동은 `geometry/openings.ts`의 `placeOpening`(벽 끝 클램프 + 겹침 회피). 벽이 짧아지면 `updateFloor`가 `clampOpenings`로 되돌린다.
