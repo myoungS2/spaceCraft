@@ -5,7 +5,8 @@ import type { Vec } from './vec'
 /** 이보다 작은 면(mm²)은 방으로 보지 않는다. 0.01m² */
 const MIN_ROOM_AREA = 10_000
 
-export const ROOM_COLORS = ['#efe4d0', '#dde8f2', '#e2ecdc', '#f2e0e0', '#e7e1f2', '#f4eed8']
+// 브랜드 팔레트(보라·라벤더·핑크·노랑·하늘)를 바닥색으로 쓸 수 있게 옅게 푼 색
+export const ROOM_COLORS = ['#f3eedc', '#eceaff', '#ffe9f2', '#fff4cf', '#e4f1ff', '#e6f3e4']
 
 /** y-down 좌표에서 신발끈 공식. 화면에서 시계 방향이면 양수. */
 export function signedArea(points: readonly Vec[]): number {

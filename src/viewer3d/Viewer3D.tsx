@@ -114,13 +114,13 @@ export default function Viewer3D() {
   return (
     <div className="viewer3d">
       <Canvas shadows={{ type: PCFShadowMap }} camera={{ fov: 45, near: 0.05, far: 500, position: [8, 8, 8] }}>
-        <color attach="background" args={['#eef1f5']} />
-        <hemisphereLight args={['#ffffff', '#c3c8d0', 1.1]} />
+        <color attach="background" args={['#eeedfb']} />
+        <hemisphereLight args={['#ffffff', '#cfcbea', 1.1]} />
         <SunLight bounds={bounds} />
 
         <mesh rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[400, 400]} />
-          <meshStandardMaterial color="#e2e5ea" roughness={1} />
+          <meshStandardMaterial color="#e6e3f6" roughness={1} />
         </mesh>
 
         {rooms.map(({ room, polygon }) => (

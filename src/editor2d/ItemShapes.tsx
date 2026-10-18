@@ -34,15 +34,15 @@ export function ItemShapes({ items, selection, px, interactive }: Props) {
               y={-depth / 2}
               width={width}
               height={depth}
-              fill={selected ? 'rgba(232,240,254,0.92)' : 'rgba(255,255,255,0.85)'}
-              stroke={selected ? COLORS.selected : '#6b7280'}
+              fill={selected ? 'rgba(238,237,255,0.92)' : 'rgba(255,255,255,0.85)'}
+              stroke={selected ? COLORS.selected : '#77759c'}
               strokeWidth={(selected ? 2 : 1) * px}
               dash={item.locked ? [5 * px, 3 * px] : undefined}
             />
             {/* 앞쪽(깊이 +방향) 표시: 가구가 어느 쪽을 향하는지 */}
             <Line
               points={[-width / 2, depth / 2 - 3 * px, width / 2, depth / 2 - 3 * px]}
-              stroke={selected ? COLORS.selected : '#9ca3af'}
+              stroke={selected ? COLORS.selected : '#a9a6cc'}
               strokeWidth={2 * px}
               listening={false}
             />
@@ -53,7 +53,7 @@ export function ItemShapes({ items, selection, px, interactive }: Props) {
               align="center"
               text={item.locked ? `🔒 ${entry.name}` : entry.name}
               fontSize={fontSize}
-              fill="#374151"
+              fill="#2b2a4a"
               listening={false}
             />
             {selected && !item.locked && (

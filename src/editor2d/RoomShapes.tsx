@@ -61,7 +61,7 @@ export function RoomLabels({ rooms, px }: { rooms: RoomView[]; px: number }) {
             text={`${room.name}\n${areaM2(polygon).toFixed(1)}m²`}
             fontSize={fontSize}
             lineHeight={1.2}
-            fill="#3d434d"
+            fill="#3b3a8f"
           />
         )
       })}

@@ -8,12 +8,12 @@ import type { Corner } from '../model/schema'
 import type { Selection } from '../store/uiStore'
 
 export const COLORS = {
-  wallFill: '#c9ced6',
-  wallStroke: '#5b6270',
-  selected: '#2f6feb',
-  selectedFill: '#b7cdf8',
-  dim: '#7a818c',
-  preview: 'rgba(47,111,235,0.35)',
+  wallFill: '#d9d6f2',
+  wallStroke: '#57558f',
+  selected: '#7b7ceb',
+  selectedFill: '#c9c2ff',
+  dim: '#8a88b0',
+  preview: 'rgba(123,124,235,0.35)',
 }
 
 /** 벽 중심선 a→b를 두께만큼 부풀린 사각형 꼭짓점 (Konva Line points 형식) */

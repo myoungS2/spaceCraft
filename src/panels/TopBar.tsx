@@ -18,7 +18,11 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      <div className="brand">spaceCraft</div>
+      <div className="brand">
+        <img src="/logo.svg" alt="" />
+        <span className="brand-name">spacecraft</span>
+        <span className="brand-tag">2D · 3D</span>
+      </div>
       <div className="group">
         <button onClick={() => docHistory().undo()} disabled={!canUndo} title="실행취소 (Ctrl/Cmd+Z)">
           ↶ 실행취소

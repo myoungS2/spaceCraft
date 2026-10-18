@@ -39,6 +39,7 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
 - `src/editor2d` Konva 2D / `src/viewer3d` R3F 3D(첫 전환 시 lazy 로드) / `src/panels` UI 패널 / `src/hooks`
 - 벽 접합부(마이터): `geometry/wallJoints.ts`의 `wallFootprints`가 corner마다 벽을 각도순 정렬해 이웃 벽 바깥선 교점으로 벽별 위에서 본 다각형을 만든다(corner 자신도 꼭짓점에 넣어 T자·십자 가운데를 빈틈없이 나눔). 바깥 끝이 두께/2×`MITER_LIMIT`(4)를 넘으면 bevel, 안쪽 교점이 벽 길이를 넘거나 180° 이어짐이면 직각으로 자른다. 2D `WallShapes`와 3D가 같은 다각형을 쓴다.
 - 3D 벽: 개구부 없으면 footprint를 높이만큼 세운다. 개구부가 있으면 `splitFootprint`로 [접합부 조각 | 두께 일정한 가운데 | 접합부 조각]으로 나눠 가운데만 `viewer3d/wallOutline.ts` 측면 외곽(바닥·천장에 닿는 개구부는 notch, 떠 있는 창만 hole)을 두께만큼 밀고 합친다(CSG 없음). 그래서 접합부 조각에 걸친 개구부 부분(꺾인 모서리 안쪽 두께/2 이내)은 막힌다. `WallMesh`는 wall·corner 참조와 footprint 좌표가 바뀐 벽만 다시 만든다(이웃 벽이 움직이면 접합부가 바뀌므로).
+- 테마: 브랜드 팔레트(#7B7CEB·#B8A8FF·#FFD1E6·#FFE38A·#CFE7FF)와 폰트(워드마크 Pixelify Sans, 본문 Nunito)는 `src/styles.css`의 `:root` 토큰. 캔버스 색은 `editor2d/WallShapes.tsx`의 `COLORS`, 3D는 `viewer3d`의 상수. 로고는 `public/logo.svg`(32×32 픽셀아트, 파비콘 겸용)
 - `src/data/catalog.json` 가구 카탈로그, GLB는 `public/models/` (CC0만, 출처는 CREDITS.md)
 
 ## TODO

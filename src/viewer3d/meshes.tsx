@@ -7,8 +7,8 @@ import type { Corner, Opening, Room, Wall } from '../model/schema'
 import { FLOOR_SHAPE_ROTATION_X, mmToM, planDirectionToWorldY, planToFloorShape, planToWorld } from '../utils/coords'
 import { removeCollinear, wallOutline } from './wallOutline'
 
-const WALL_COLOR = '#f3f1ec'
-const GLASS_COLOR = '#9cc3e6'
+const WALL_COLOR = '#f7f5ff'
+const GLASS_COLOR = '#cfe7ff'
 
 /** 위에서 본 다각형(벽 로컬 mm)을 높이만큼 세운다. 결과는 벽 로컬 m 좌표(x 벽 방향, y 높이, z 두께). */
 function extrudePlan(polygon: readonly Vec[], height: number): ExtrudeGeometry {

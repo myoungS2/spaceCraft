@@ -50,8 +50,8 @@ interface DrawState {
 }
 
 const snapColor: Record<SnapResult['kind'], string> = {
-  corner: '#e8590c',
-  wall: '#2b8a3e',
+  corner: '#f2a900',
+  wall: '#e85d9c',
   grid: COLORS.selected,
 }
 

@@ -6,7 +6,7 @@ import type { Selection } from '../store/uiStore'
 import { COLORS, wallPolygon } from './WallShapes'
 
 const CUT_FILL = '#ffffff'
-const LINE = '#3d434d'
+const LINE = '#3b3a8f'
 
 /** 벽 중심선 위 개구부 양 끝점 */
 export function openingSpan(a: Vec, b: Vec, offset: number, width: number): { s: Vec; e: Vec; dir: Vec; n: Vec } {

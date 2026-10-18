@@ -37,12 +37,12 @@ export function Grid({ viewport, width, height, gridSnap }: Props) {
         // 보조선: 스냅 간격의 배수 중 화면에서 8px 이상 벌어지는 가장 작은 간격
         let minor = gridSnap
         while (minor * viewport.scale < MIN_PX_SPACING && minor < MAJOR_STEP) minor *= 2
-        if (minor < MAJOR_STEP) drawLines(minor, '#eceef2')
-        if (MAJOR_STEP * viewport.scale >= MIN_PX_SPACING) drawLines(MAJOR_STEP, '#d5d9e0')
+        if (minor < MAJOR_STEP) drawLines(minor, '#eeecfa')
+        if (MAJOR_STEP * viewport.scale >= MIN_PX_SPACING) drawLines(MAJOR_STEP, '#dcd8f4')
         // 원점 표시
         ctx.beginPath()
         ctx.arc(0, 0, 3 * px, 0, Math.PI * 2)
-        ctx.fillStyle = '#b0b6c0'
+        ctx.fillStyle = '#b3afd6'
         ctx.fill()
       }}
     />
