@@ -23,6 +23,10 @@ export const OpeningSchema = z.object({
   height: positiveMm,
   /** 바닥에서 개구부 하단까지의 높이. door는 항상 0 */
   sill: mm.nonnegative(),
+  /** door: 경첩을 벽 end 쪽에 둔다(기본은 start 쪽) */
+  hingeAtEnd: z.boolean().optional(),
+  /** door: 벽의 반대쪽으로 열린다 */
+  swingReverse: z.boolean().optional(),
 })
 
 export const WallSchema = z.object({

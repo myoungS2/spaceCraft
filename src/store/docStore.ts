@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
+import { clampOpenings } from '../geometry/openings'
 import { syncRooms } from '../geometry/rooms'
 import { createEmptyDoc } from '../model/defaults'
 import type { Doc, Floor, Settings } from '../model/schema'
@@ -27,8 +28,9 @@ export const useDocStore = create<DocState>()(
         set((s) => {
           const [first, ...rest] = s.doc.floors
           if (!first) return s
-          // 벽 구조가 바뀌면 같은 set 안에서 rooms도 다시 계산한다(히스토리 1건).
-          const next = syncRooms(first, recipe(first))
+          // 같은 set 안에서 파생 규칙을 적용한다(히스토리 1건):
+          // 벽 구조가 바뀌면 rooms 재계산, 벽이 짧아지면 개구부를 벽 안으로 되돌림.
+          const next = clampOpenings(syncRooms(first, recipe(first)))
           if (next === first) return s
           return { doc: { ...s.doc, floors: [next, ...rest] } }
         }),

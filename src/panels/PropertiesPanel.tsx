@@ -1,9 +1,10 @@
+import { findOpening, MIN_OPENING_WIDTH, updateOpening, wallHeight, type OpeningPatch } from '../geometry/openings'
 import { areaM2, ROOM_COLORS, roomPolygon } from '../geometry/rooms'
-import { getSegment, moveCorner, setWallLength, updateWall } from '../geometry/walls'
+import { getSegment, moveCorner, segmentLength, setWallLength, updateWall } from '../geometry/walls'
 import { distance } from '../geometry/vec'
 import { deleteSelection } from '../store/actions'
 import { selectFloor, useDocStore } from '../store/docStore'
-import type { Room } from '../model/schema'
+import type { Opening, Room } from '../model/schema'
 import { useUiStore } from '../store/uiStore'
 import { ColorField } from './ColorField'
 import { NumberField } from './NumberField'
@@ -19,6 +20,8 @@ export function PropertiesPanel() {
     body = <WallProps wallId={selection.id} />
   } else if (selection?.kind === 'corner' && floor.corners.some((c) => c.id === selection.id)) {
     body = <CornerProps cornerId={selection.id} />
+  } else if (selection?.kind === 'opening' && findOpening(floor, selection.id)) {
+    body = <OpeningProps openingId={selection.id} />
   } else if (selection?.kind === 'room' && floor.rooms.some((r) => r.id === selection.id)) {
     body = <RoomProps roomId={selection.id} />
   }
@@ -88,6 +91,62 @@ function CornerProps({ cornerId }: { cornerId: string }) {
       <p className="muted">연결된 벽 {wallCount}개</p>
       <button className="danger" onClick={deleteSelection}>
         꼭짓점과 연결된 벽 삭제
+      </button>
+    </>
+  )
+}
+
+function OpeningProps({ openingId }: { openingId: string }) {
+  const floor = useDocStore(selectFloor)
+  const updateFloor = useDocStore((s) => s.updateFloor)
+  const found = findOpening(floor, openingId)
+  const seg = found && getSegment(floor, found.wall.id)
+  if (!found || !seg) return null
+  const { wall, opening } = found
+  const len = Math.floor(segmentLength(seg))
+  const maxH = wallHeight(floor, wall)
+  const patch = (p: OpeningPatch) => updateFloor((f) => updateOpening(f, wall.id, openingId, p))
+  const isDoor = opening.type === 'door'
+
+  return (
+    <>
+      <h3>{isDoor ? '문' : '창'}</h3>
+      <label className="field">
+        <span>종류</span>
+        <select value={opening.type} onChange={(e) => patch({ type: e.target.value as Opening['type'] })}>
+          <option value="door">문</option>
+          <option value="window">창</option>
+        </select>
+      </label>
+      <NumberField
+        label="위치 (벽 시작점→중심)"
+        value={opening.offset}
+        min={Math.ceil(opening.width / 2)}
+        max={Math.floor(len - opening.width / 2)}
+        onCommit={(offset) => patch({ offset })}
+      />
+      <NumberField label="폭" value={opening.width} min={MIN_OPENING_WIDTH} max={len} onCommit={(width) => patch({ width })} />
+      <div className="field-row">
+        <NumberField label="높이" value={opening.height} min={100} max={maxH - opening.sill} onCommit={(height) => patch({ height })} />
+        {!isDoor && (
+          <NumberField label="바닥에서" value={opening.sill} min={0} max={maxH - 100} onCommit={(sill) => patch({ sill })} />
+        )}
+      </div>
+      {isDoor && (
+        <>
+          <label className="check">
+            <input type="checkbox" checked={!!opening.hingeAtEnd} onChange={(e) => patch({ hingeAtEnd: e.target.checked })} />
+            경첩 위치 반대로
+          </label>
+          <label className="check">
+            <input type="checkbox" checked={!!opening.swingReverse} onChange={(e) => patch({ swingReverse: e.target.checked })} />
+            여는 방향 반대로
+          </label>
+        </>
+      )}
+      <p className="muted">벽 길이 {len}mm · 벽 높이 {maxH}mm</p>
+      <button className="danger" onClick={deleteSelection}>
+        {isDoor ? '문' : '창'} 삭제
       </button>
     </>
   )

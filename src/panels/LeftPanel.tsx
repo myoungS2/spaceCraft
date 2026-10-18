@@ -28,6 +28,8 @@ export function LeftPanel() {
 const tools: { id: DrawTool; label: string; key: string }[] = [
   { id: 'select', label: '선택', key: 'V' },
   { id: 'wall', label: '벽 그리기', key: 'W' },
+  { id: 'door', label: '문', key: 'D' },
+  { id: 'window', label: '창', key: 'N' },
 ]
 
 function DrawHelp() {
@@ -50,11 +52,18 @@ function DrawHelp() {
           <li>시작점 클릭: 닫고 종료</li>
           <li>Shift: 수평/수직 고정</li>
         </ul>
+      ) : tool === 'door' || tool === 'window' ? (
+        <ul>
+          <li>벽 위를 클릭해 {tool === 'door' ? '문' : '창'} 배치</li>
+          <li>벽 끝이나 다른 개구부와 겹치지 않게 자동으로 밀림</li>
+          <li>배치 후 선택 도구로 벽을 따라 드래그</li>
+        </ul>
       ) : (
         <ul>
           <li>벽 드래그: 평행 이동</li>
           <li>꼭짓점 드래그: 연결된 벽과 함께 이동</li>
           <li>꼭짓점을 다른 꼭짓점에 놓으면 합쳐짐</li>
+          <li>문·창 드래그: 벽을 따라 이동</li>
           <li>Delete: 선택 삭제</li>
         </ul>
       )}

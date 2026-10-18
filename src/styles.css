@@ -143,3 +143,16 @@ button.danger:hover:not(:disabled) { border-color: var(--danger); }
 .swatch { width: 24px; height: 24px; padding: 0; border-radius: 50%; }
 .swatch[aria-pressed='true'] { outline: 2px solid var(--accent); outline-offset: 1px; }
 .swatches input[type='color'] { width: 32px; height: 26px; padding: 0 2px; }
+
+select {
+  font: inherit;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.check input { width: auto; }
+.tool-buttons { grid-template-columns: 1fr 1fr; }

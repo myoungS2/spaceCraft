@@ -24,7 +24,9 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
 ## 문서 스키마 요약 (`src/model/schema.ts`가 원본)
 - `schemaVersion`(현재 1), `unit: "mm"`, `floors[]`(MVP는 floors[0]만 UI 노출), `settings.gridSnap`
 - floor: `height`, `corners[{id,x,y}]`, `walls[{id,start,end,thickness,height?,openings[]}]`, `rooms[]`, `items[]`
-- opening: `offset` = 벽 start corner → 개구부 **중심** 거리(중심선 기준), `sill`(door는 0)
+- opening: `offset` = 벽 start corner → 개구부 **중심** 거리(중심선 기준), `sill`(door는 0), door 전용 `hingeAtEnd?`·`swingReverse?`
+  배치·이동은 `geometry/openings.ts`의 `placeOpening`(벽 끝 클램프 + 겹침 회피). 벽이 짧아지면 `updateFloor`가 `clampOpenings`로 되돌린다.
+  개구부는 벽 분할로 소속 벽이 바뀔 수 있으니 `findOpening(floor, id)`로 찾는다.
 - room: 닫힌 벽 루프에서 자동 생성(`geometry/rooms.ts`). `docStore.updateFloor`가 벽 구조(topologyKey)가 바뀔 때마다 `syncRooms`로 같은 set 안에서 재계산한다. rooms를 직접 추가/삭제하지 말 것.
   이름·색 유지 규칙: cornerIds 집합이 같으면 그대로, 아니면 공유 corner가 많고(3개 이상, 또는 2개+다각형 겹침) 면적이 큰 순으로 이어받음
 - item: `x,y` = 바운딩박스 중심, `rotation`(deg), `width/depth/height?` = 카탈로그 치수 오버라이드

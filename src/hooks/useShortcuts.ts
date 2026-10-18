@@ -41,6 +41,8 @@ export function useShortcuts() {
       const ui = useUiStore.getState()
       if (ui.mode === 'draw' && key === 'v') ui.setTool('select')
       if (ui.mode === 'draw' && key === 'w') ui.setTool('wall')
+      if (ui.mode === 'draw' && key === 'd') ui.setTool('door')
+      if (ui.mode === 'draw' && key === 'n') ui.setTool('window')
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)

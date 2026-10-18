@@ -3,7 +3,7 @@ import { create } from 'zustand'
 export type EditorMode = 'draw' | 'furniture'
 export type ViewMode = '2d' | '3d'
 /** 도면 그리기 모드의 도구 */
-export type DrawTool = 'select' | 'wall'
+export type DrawTool = 'select' | 'wall' | 'door' | 'window'
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 export type Selection =

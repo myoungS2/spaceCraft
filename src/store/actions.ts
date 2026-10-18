@@ -1,3 +1,4 @@
+import { deleteOpening, findOpening } from '../geometry/openings'
 import { deleteCorner, deleteWall } from '../geometry/walls'
 import { useDocStore } from './docStore'
 import { useUiStore } from './uiStore'
@@ -14,8 +15,14 @@ export function deleteSelection() {
     case 'corner':
       updateFloor((f) => deleteCorner(f, selection.id))
       break
+    case 'opening':
+      updateFloor((f) => {
+        const found = findOpening(f, selection.id)
+        return found ? deleteOpening(f, found.wall.id, selection.id) : f
+      })
+      break
     default:
-      // 개구부·방·가구 삭제는 해당 단계에서 추가한다.
+      // 방은 벽에서 자동 생성되므로 직접 지우지 않는다. 가구 삭제는 6단계에서 추가한다.
       return
   }
   select(null)

@@ -1,24 +1,28 @@
 import type { KonvaEventObject } from 'konva/lib/Node'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Circle, Group, Layer, Line, Stage } from 'react-konva'
+import { addOpening, moveOpening, OPENING_DEFAULTS, placeOpening } from '../geometry/openings'
 import { roomPolygon } from '../geometry/rooms'
 import { snapPoint, snapToGrid, type SnapOptions, type SnapResult } from '../geometry/snap'
-import { add, dot, normalize, perp, scale, sub, type Vec } from '../geometry/vec'
+import { add, dot, normalize, perp, projectOnSegment, scale, sub, type Vec } from '../geometry/vec'
 import {
   addWall,
   getSegment,
   mergeCorners,
   moveCorner,
   moveCorners,
+  segmentLength,
   wallSegments,
   type PointRef,
+  type WallSegment,
 } from '../geometry/walls'
 import { isTypingTarget } from '../hooks/useShortcuts'
 import { DEFAULT_WALL_THICKNESS } from '../model/defaults'
-import type { Floor } from '../model/schema'
+import type { Floor, OpeningType } from '../model/schema'
 import { beginGesture, cancelGesture, endGesture, selectFloor, useDocStore } from '../store/docStore'
 import { useUiStore } from '../store/uiStore'
 import { Grid } from './Grid'
+import { OpeningGlyph, OpeningShapes } from './OpeningShapes'
 import { RoomLabels, RoomShapes, type RoomView } from './RoomShapes'
 import { useElementSize } from './useElementSize'
 import { screenToWorld, zoomAt } from './viewport'
@@ -47,6 +51,25 @@ const snapColor: Record<SnapResult['kind'], string> = {
   grid: COLORS.selected,
 }
 
+/** 개구부 도구가 벽 위에 띄우는 미리보기 */
+interface OpeningHover {
+  wallId: string
+  offset: number
+  width: number
+}
+
+/** 커서 아래(벽 두께 + 허용 거리 안)의 가장 가까운 벽과, 벽 시작점부터 커서까지의 거리 */
+function wallAt(segments: readonly WallSegment[], p: Vec, tolerance: number) {
+  let best: { seg: WallSegment; along: number; dist: number } | undefined
+  for (const seg of segments) {
+    const proj = projectOnSegment(p, seg.a, seg.b)
+    if (proj.t <= 0 || proj.t >= 1) continue
+    if (proj.distance > seg.wall.thickness / 2 + tolerance) continue
+    if (!best || proj.distance < best.dist) best = { seg, along: proj.t * segmentLength(seg), dist: proj.distance }
+  }
+  return best
+}
+
 const getFloor = () => selectFloor(useDocStore.getState())
 const updateFloor = (recipe: (floor: Floor) => Floor) => useDocStore.getState().updateFloor(recipe)
 
@@ -67,12 +90,14 @@ export function Editor2D() {
 
   const [drawing, setDrawing] = useState<DrawState | null>(null)
   const [cursor, setCursor] = useState<SnapResult | null>(null)
+  const [openingHover, setOpeningHover] = useState<OpeningHover | null>(null)
   const [spaceHeld, setSpaceHeld] = useState(false)
   const [panning, setPanning] = useState(false)
   const dragRef = useRef<DragSession | null>(null)
 
   const px = 1 / viewport.scale
   const wallToolActive = mode === 'draw' && tool === 'wall'
+  const openingTool: OpeningType | null = mode === 'draw' && (tool === 'door' || tool === 'window') ? tool : null
 
   useEffect(() => {
     if (!wallToolActive) {
@@ -80,6 +105,8 @@ export function Editor2D() {
       setCursor(null)
     }
   }, [wallToolActive])
+
+  useEffect(() => setOpeningHover(null), [openingTool])
 
   // Space(팬), ESC(그리기 종료)
   useEffect(() => {
@@ -175,6 +202,53 @@ export function Editor2D() {
     setDrawing({ start: { x: end.x, y: end.y, cornerId: end.id }, firstCornerId: first })
   }
 
+  /** 개구부 도구: 커서 아래 벽에 놓일 자리(클램프·겹침 회피 결과) */
+  const openingPlacement = (world: Vec, type: OpeningType): OpeningHover | null => {
+    const hit = wallAt(wallSegments(getFloor()), world, SNAP_PX / useUiStore.getState().viewport.scale)
+    if (!hit) return null
+    const len = segmentLength(hit.seg)
+    const width = Math.min(OPENING_DEFAULTS[type].width, Math.floor(len))
+    const desired = snapToGrid(hit.along, useDocStore.getState().doc.settings.gridSnap)
+    const offset = placeOpening(len, hit.seg.wall.openings, { width }, desired)
+    return offset === null ? null : { wallId: hit.seg.wall.id, offset, width }
+  }
+
+  const handleOpeningClick = (world: Vec, type: OpeningType) => {
+    const place = openingPlacement(world, type)
+    if (!place) return
+    const r = addOpening(getFloor(), place.wallId, type, place.offset)
+    if (!r.openingId) return
+    updateFloor(() => r.floor)
+    useUiStore.getState().select({ kind: 'opening', wallId: place.wallId, id: r.openingId })
+    setOpeningHover(null)
+  }
+
+  /** 개구부를 잡은 지점을 유지하면서 벽을 따라 옮긴다. */
+  const startOpeningDrag = (openingId: string, startWorld: Vec) => {
+    const seg = wallSegments(getFloor()).find((s) => s.wall.openings.some((o) => o.id === openingId))
+    const opening = seg?.wall.openings.find((o) => o.id === openingId)
+    if (!seg || !opening) return
+    const wallId = seg.wall.id
+    useUiStore.getState().select({ kind: 'opening', wallId, id: openingId })
+    const len = segmentLength(seg)
+    const alongOf = (p: Vec) => projectOnSegment(p, seg.a, seg.b).t * len
+    const grab = opening.offset - alongOf(startWorld)
+    let moved = false
+    startDrag({
+      move: (world) => {
+        const desired = snapToGrid(alongOf(world) + grab, useDocStore.getState().doc.settings.gridSnap)
+        if (!moved && desired === opening.offset) return
+        if (!moved) {
+          moved = true
+          beginGesture()
+        }
+        updateFloor((f) => moveOpening(f, wallId, openingId, desired))
+      },
+      up: () => moved && endGesture(),
+      cancel: () => moved && cancelGesture(),
+    })
+  }
+
   const startCornerDrag = (cornerId: string) => {
     useUiStore.getState().select({ kind: 'corner', id: cornerId })
     let moved = false
@@ -253,19 +327,29 @@ export function Editor2D() {
       handleWallClick(world, evt.shiftKey)
       return
     }
+    if (openingTool) {
+      handleOpeningClick(world, openingTool)
+      return
+    }
     if (mode !== 'draw') {
       useUiStore.getState().select(null)
       return
     }
     const name = e.target.name()
-    if (name === 'corner') startCornerDrag(e.target.id())
+    if (name === 'opening') startOpeningDrag(e.target.id(), world)
+    else if (name === 'corner') startCornerDrag(e.target.id())
     else if (name === 'wall') startWallDrag(e.target.id(), world)
     else if (name === 'room') useUiStore.getState().select({ kind: 'room', id: e.target.id() })
     else useUiStore.getState().select(null)
   }
 
   const onMouseMove = (e: KonvaEventObject<MouseEvent>) => {
-    if (dragRef.current || !wallToolActive) return
+    if (dragRef.current) return
+    if (openingTool) {
+      setOpeningHover(openingPlacement(clientToWorld(e.evt), openingTool))
+      return
+    }
+    if (!wallToolActive) return
     setCursor(snapPoint(clientToWorld(e.evt), snapOptions({ anchor: drawing?.start, ortho: e.evt.shiftKey })))
   }
 
@@ -277,7 +361,14 @@ export function Editor2D() {
     setViewport(zoomAt(vp, screen, Math.exp(-e.evt.deltaY * ZOOM_SPEED)))
   }
 
-  const cursorStyle = panning ? 'grabbing' : spaceHeld ? 'grab' : wallToolActive ? 'crosshair' : 'default'
+  const cursorStyle = panning
+    ? 'grabbing'
+    : spaceHeld
+      ? 'grab'
+      : wallToolActive || openingTool
+        ? 'crosshair'
+        : 'default'
+  const hoverSeg = openingHover && segments.find((s) => s.wall.id === openingHover.wallId)
 
   return (
     <div ref={containerRef} className="editor2d" style={{ cursor: cursorStyle }} onContextMenu={(e) => e.preventDefault()}>
@@ -291,15 +382,19 @@ export function Editor2D() {
           scaleY={viewport.scale}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
-          onMouseLeave={() => setCursor(null)}
+          onMouseLeave={() => {
+            setCursor(null)
+            setOpeningHover(null)
+          }}
           onWheel={onWheel}
         >
           <Layer listening={false}>
             <Grid viewport={viewport} width={size.width} height={size.height} gridSnap={gridSnap} />
           </Layer>
           <Layer>
-            <RoomShapes rooms={rooms} selection={selection} px={px} interactive={mode === 'draw' && !wallToolActive} />
-            <WallShapes segments={segments} selection={selection} px={px} interactive={mode === 'draw' && !wallToolActive} />
+            <RoomShapes rooms={rooms} selection={selection} px={px} interactive={mode === 'draw' && tool === 'select'} />
+            <WallShapes segments={segments} selection={selection} px={px} interactive={mode === 'draw' && tool === 'select'} />
+            <OpeningShapes segments={segments} selection={selection} px={px} interactive={mode === 'draw' && tool === 'select'} />
             <DimensionLines segments={segments} rooms={roomPolygons} px={px} />
             <RoomLabels rooms={rooms} px={px} />
             {mode === 'draw' && tool === 'select' && (
@@ -308,6 +403,17 @@ export function Editor2D() {
           </Layer>
           <Layer listening={false}>
             {wallToolActive && <WallToolOverlay drawing={drawing} cursor={cursor} px={px} />}
+            {openingTool && openingHover && hoverSeg && (
+              <OpeningGlyph
+                a={hoverSeg.a}
+                b={hoverSeg.b}
+                thickness={hoverSeg.wall.thickness}
+                opening={{ type: openingTool, offset: openingHover.offset, width: openingHover.width }}
+                px={px}
+                color={COLORS.selected}
+                opacity={0.7}
+              />
+            )}
           </Layer>
         </Stage>
       )}
