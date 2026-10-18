@@ -1,0 +1,16 @@
+[
+  { "id": "sofa-3", "category": "소파", "name": "3인용 소파", "width": 2100, "depth": 900, "height": 850, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "sofa-1", "category": "소파", "name": "1인용 소파", "width": 900, "depth": 850, "height": 850, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "bed-single", "category": "침대", "name": "싱글 침대", "width": 1000, "depth": 2050, "height": 450, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "bed-queen", "category": "침대", "name": "퀸 침대", "width": 1600, "depth": 2100, "height": 450, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "table-dining-4", "category": "테이블", "name": "4인 식탁", "width": 1400, "depth": 800, "height": 740, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "table-coffee", "category": "테이블", "name": "소파 테이블", "width": 1000, "depth": 500, "height": 400, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "chair-dining", "category": "의자", "name": "식탁 의자", "width": 450, "depth": 520, "height": 820, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "chair-office", "category": "의자", "name": "사무용 의자", "width": 650, "depth": 650, "height": 1100, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "desk", "category": "테이블", "name": "책상", "width": 1200, "depth": 600, "height": 730, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "wardrobe", "category": "수납", "name": "옷장", "width": 1200, "depth": 600, "height": 2000, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "bookshelf", "category": "수납", "name": "책장", "width": 800, "depth": 300, "height": 1800, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "drawer", "category": "수납", "name": "서랍장", "width": 800, "depth": 450, "height": 900, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "tv-stand", "category": "수납", "name": "TV장", "width": 1800, "depth": 400, "height": 450, "license": "CC0", "author": "placeholder", "sourceUrl": "" },
+  { "id": "fridge", "category": "가전", "name": "냉장고", "width": 900, "depth": 750, "height": 1800, "license": "CC0", "author": "placeholder", "sourceUrl": "" }
+]

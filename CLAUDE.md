@@ -1,0 +1,40 @@
+# Roomie — 인테리어 플래너 MVP
+
+도면(벽·문·창)을 2D로 그리고 3D로 확인하며 가구를 배치하는 프론트 단독 웹앱. 저장은 IndexedDB.
+
+## 명령
+- pnpm 전역 설치가 안 되어 있으면 `corepack pnpm <cmd>`로 실행
+- `pnpm dev` / `pnpm test` / `pnpm typecheck` / `pnpm build`
+- 단계 완료 조건: `pnpm typecheck && pnpm test` 통과
+
+## 스택 (고정)
+React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), zustand + zundo, zod v4, idb-keyval, vitest.
+버전 문제가 생기면 임의로 다운그레이드하지 말고 먼저 사용자에게 알린다.
+
+## 설계 원칙 (반드시 지킬 것)
+1. **진실원천 = 도면 문서 1개** (`src/store/docStore.ts`의 `doc`). 2D/3D는 문서를 그리는 뷰일 뿐. 3D에서 편집해도 문서를 고친 뒤 다시 그린다.
+2. **스토어 분리**: 문서는 `docStore`(zundo로 undo/redo), 화면 상태(선택·모드·뷰포트·2D/3D·저장상태)는 `uiStore`(히스토리 없음).
+3. **단위**: 길이는 정수 mm, 각도는 degree. 2D(mm, y-down) ↔ 3D(m, y-up) 변환은 `src/utils/coords.ts`에서만. 2D (x, y) → 3D (x/1000, h/1000, y/1000). 다른 곳에서 `/1000` 금지.
+4. **벽은 corner 그래프**: wall.start/end는 cornerId. 꼭짓점을 공유하므로 꼭짓점 이동 시 연결된 벽이 함께 움직인다.
+5. **불변 업데이트**: `updateFloor(f => newF)`. 변경이 없으면 같은 참조를 반환해 히스토리에 안 쌓이게 한다. 3D는 wall 객체 참조가 바뀐 벽만 재생성.
+6. **기하 연산은 순수 함수**로 `src/geometry/`에 두고 `*.test.ts`로 테스트.
+7. 드래그 하나 = 히스토리 1건 (zundo pause/resume).
+8. 텍스트/숫자 입력은 Enter·blur 시에만 문서에 반영(글자마다 히스토리 금지).
+
+## 문서 스키마 요약 (`src/model/schema.ts`가 원본)
+- `schemaVersion`(현재 1), `unit: "mm"`, `floors[]`(MVP는 floors[0]만 UI 노출), `settings.gridSnap`
+- floor: `height`, `corners[{id,x,y}]`, `walls[{id,start,end,thickness,height?,openings[]}]`, `rooms[]`, `items[]`
+- opening: `offset` = 벽 start corner → 개구부 **중심** 거리(중심선 기준), `sill`(door는 0)
+- room: 닫힌 벽 루프에서 자동 생성. cornerIds 집합이 같으면 name/floorColor 유지
+- item: `x,y` = 바운딩박스 중심, `rotation`(deg), `width/depth/height?` = 카탈로그 치수 오버라이드
+- 스키마 변경 시 `SCHEMA_VERSION` 올리고 `src/model/migrate.ts`의 `steps`에 변환 추가
+
+## 폴더
+- `src/model` 스키마·기본값·migrate·id / `src/store` docStore·uiStore·persistence
+- `src/geometry` 순수 기하 함수 / `src/utils/coords.ts` 좌표 변환
+- `src/editor2d` Konva 2D / `src/viewer3d` R3F 3D / `src/panels` UI 패널 / `src/hooks`
+- `src/data/catalog.json` 가구 카탈로그, GLB는 `public/models/` (CC0만, 출처는 CREDITS.md)
+
+## TODO
+- TODO(miter): 벽 접합부는 현재 겹침 허용. 마이터 처리 미구현.
+- 제외 범위: 백엔드/로그인, 마감재, 견적, 렌더샷, 다층 UI, 도면 이미지 업로드, AI

@@ -1,0 +1,37 @@
+import { useEffect } from 'react'
+import { docHistory } from '../store/docStore'
+import { useUiStore } from '../store/uiStore'
+
+/** 텍스트 입력 중에는 단축키를 무시한다. */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable
+}
+
+export function useShortcuts() {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target)) return
+      const mod = e.metaKey || e.ctrlKey
+      const key = e.key.toLowerCase()
+
+      if (mod && key === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) docHistory().redo()
+        else docHistory().undo()
+        return
+      }
+      if (mod && key === 'y') {
+        e.preventDefault()
+        docHistory().redo()
+        return
+      }
+      if (e.key === 'Escape') {
+        useUiStore.getState().select(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+}
