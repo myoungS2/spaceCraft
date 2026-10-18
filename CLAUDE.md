@@ -37,9 +37,10 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
 - `src/model` 스키마·기본값·migrate·id / `src/store` docStore·uiStore·persistence
 - `src/geometry` 순수 기하 함수 / `src/utils/coords.ts` 좌표 변환
 - `src/editor2d` Konva 2D / `src/viewer3d` R3F 3D(첫 전환 시 lazy 로드) / `src/panels` UI 패널 / `src/hooks`
-- 3D 벽: `viewer3d/wallOutline.ts`가 벽 측면 외곽선을 만든다. 바닥·천장에 닿는 개구부는 hole이 아니라 외곽선을 파내고(notch), 떠 있는 창만 hole. `WallMesh`는 memo로 wall·corner 참조가 바뀐 벽만 다시 만든다.
+- 벽 접합부(마이터): `geometry/wallJoints.ts`의 `wallFootprints`가 corner마다 벽을 각도순 정렬해 이웃 벽 바깥선 교점으로 벽별 위에서 본 다각형을 만든다(corner 자신도 꼭짓점에 넣어 T자·십자 가운데를 빈틈없이 나눔). 바깥 끝이 두께/2×`MITER_LIMIT`(4)를 넘으면 bevel, 안쪽 교점이 벽 길이를 넘거나 180° 이어짐이면 직각으로 자른다. 2D `WallShapes`와 3D가 같은 다각형을 쓴다.
+- 3D 벽: 개구부 없으면 footprint를 높이만큼 세운다. 개구부가 있으면 `splitFootprint`로 [접합부 조각 | 두께 일정한 가운데 | 접합부 조각]으로 나눠 가운데만 `viewer3d/wallOutline.ts` 측면 외곽(바닥·천장에 닿는 개구부는 notch, 떠 있는 창만 hole)을 두께만큼 밀고 합친다(CSG 없음). 그래서 접합부 조각에 걸친 개구부 부분(꺾인 모서리 안쪽 두께/2 이내)은 막힌다. `WallMesh`는 wall·corner 참조와 footprint 좌표가 바뀐 벽만 다시 만든다(이웃 벽이 움직이면 접합부가 바뀌므로).
 - `src/data/catalog.json` 가구 카탈로그, GLB는 `public/models/` (CC0만, 출처는 CREDITS.md)
 
 ## TODO
-- TODO(miter): 벽 접합부는 현재 겹침 허용. 마이터 처리 미구현.
+- 벽 접합부 마이터는 구현됨(위 참고). 남은 한계: 두께가 다른 벽의 180° 이어짐은 계단, 아주 짧은 벽(양 끝 접합부가 겹침)은 개구부를 무시하고 footprint만 세운다.
 - 제외 범위: 백엔드/로그인, 마감재, 견적, 렌더샷, 다층 UI, 도면 이미지 업로드, AI

@@ -3,6 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { PCFShadowMap, type DirectionalLight, type Vector3 } from 'three'
 import { roomPolygon } from '../geometry/rooms'
+import { wallFootprints } from '../geometry/wallJoints'
 import { wallSegments } from '../geometry/walls'
 import type { Corner } from '../model/schema'
 import { selectFloor, useDocStore } from '../store/docStore'
@@ -103,6 +104,7 @@ export default function Viewer3D() {
   const [fitKey, setFitKey] = useState(0)
 
   const segments = useMemo(() => wallSegments(floor), [floor])
+  const footprints = useMemo(() => wallFootprints(segments), [segments])
   const rooms = useMemo(() => {
     const corners = new Map(floor.corners.map((c) => [c.id, c]))
     return floor.rooms.map((room) => ({ room, polygon: roomPolygon(room, corners) }))
@@ -124,16 +126,21 @@ export default function Viewer3D() {
         {rooms.map(({ room, polygon }) => (
           <FloorMesh key={room.id} room={room} polygon={polygon} />
         ))}
-        {segments.map(({ wall, a, b }) => (
-          <WallMesh
-            key={wall.id}
-            wall={wall}
-            a={a}
-            b={b}
-            height={wall.height ?? floor.height}
-            transparent={transparent}
-          />
-        ))}
+        {segments.map(({ wall, a, b }) => {
+          const footprint = footprints.get(wall.id)
+          if (!footprint) return null
+          return (
+            <WallMesh
+              key={wall.id}
+              wall={wall}
+              a={a}
+              b={b}
+              footprint={footprint}
+              height={wall.height ?? floor.height}
+              transparent={transparent}
+            />
+          )
+        })}
 
         {floor.items.map((item) => (
           <ItemModel key={item.id} item={item} />

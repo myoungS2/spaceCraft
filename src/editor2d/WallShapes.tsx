@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
 import { Circle, Group, Line, Text } from 'react-konva'
 import { add, distance, normalize, perp, scale, sub, type Vec } from '../geometry/vec'
 import { pointInPolygon } from '../geometry/rooms'
+import { footprintPolygon, wallFootprints } from '../geometry/wallJoints'
 import type { WallSegment } from '../geometry/walls'
 import type { Corner } from '../model/schema'
 import type { Selection } from '../store/uiStore'
@@ -33,17 +35,19 @@ interface WallsProps {
 }
 
 export function WallShapes({ segments, selection, px, interactive }: WallsProps) {
-  // TODO(miter): 접합부는 사각형끼리 겹치게 둔다. 마이터 처리 미구현.
+  // 접합부는 geometry/wallJoints가 이웃 벽과 맞물리게 자른 다각형으로 그린다.
+  const footprints = useMemo(() => wallFootprints(segments), [segments])
   return (
     <Group listening={interactive}>
       {segments.map(({ wall, a, b }) => {
         const selected = selection?.kind === 'wall' && selection.id === wall.id
+        const footprint = footprints.get(wall.id)
         return (
           <Line
             key={wall.id}
             id={wall.id}
             name="wall"
-            points={wallPolygon(a, b, wall.thickness)}
+            points={footprint ? footprintPolygon(footprint).flatMap((p) => [p.x, p.y]) : wallPolygon(a, b, wall.thickness)}
             closed
             fill={selected ? COLORS.selectedFill : COLORS.wallFill}
             stroke={selected ? COLORS.selected : COLORS.wallStroke}
