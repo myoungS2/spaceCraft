@@ -1,5 +1,6 @@
 import { Circle, Group, Line, Text } from 'react-konva'
 import { add, distance, normalize, perp, scale, sub, type Vec } from '../geometry/vec'
+import { pointInPolygon } from '../geometry/rooms'
 import type { WallSegment } from '../geometry/walls'
 import type { Corner } from '../model/schema'
 import type { Selection } from '../store/uiStore'
@@ -55,13 +56,28 @@ export function WallShapes({ segments, selection, px, interactive }: WallsProps)
   )
 }
 
+/**
+ * 치수선을 그릴 쪽. 한쪽에만 방이 있으면 방이 없는 쪽(바깥)으로 보낸다.
+ * 정할 수 없으면 화면에서 시계 방향으로 그렸을 때의 바깥(-perp)을 쓴다.
+ */
+export function dimensionSide(a: Vec, b: Vec, thickness: number, rooms: readonly Vec[][]): 1 | -1 {
+  const mid = scale(add(a, b), 0.5)
+  const n = perp(normalize(sub(b, a)))
+  const probe = thickness / 2 + 50
+  const inRoom = (p: Vec) => rooms.some((poly) => pointInPolygon(p, poly))
+  const plus = inRoom(add(mid, scale(n, probe)))
+  const minus = inRoom(sub(mid, scale(n, probe)))
+  if (plus && !minus) return -1
+  if (minus && !plus) return 1
+  return -1
+}
+
 /** 벽 한쪽에 평행한 치수선과 길이(mm) 라벨 */
-export function DimensionLine({ a, b, thickness, px }: { a: Vec; b: Vec; thickness: number; px: number }) {
+export function DimensionLine({ a, b, thickness, px, side = -1 }: { a: Vec; b: Vec; thickness: number; px: number; side?: 1 | -1 }) {
   const len = distance(a, b)
   if (len / px < 40) return null
   const dir = normalize(sub(b, a))
-  // 화면에서 시계 방향으로 그린 방이면 바깥쪽. 3단계에서 방 기준으로 바깥 방향을 정한다.
-  const n = scale(perp(dir), -1)
+  const n = scale(perp(dir), side)
   const off = thickness / 2 + 14 * px
   const p1 = add(a, scale(n, off))
   const p2 = add(b, scale(n, off))
@@ -93,11 +109,18 @@ export function DimensionLine({ a, b, thickness, px }: { a: Vec; b: Vec; thickne
   )
 }
 
-export function DimensionLines({ segments, px }: { segments: WallSegment[]; px: number }) {
+export function DimensionLines({ segments, rooms, px }: { segments: WallSegment[]; rooms: readonly Vec[][]; px: number }) {
   return (
     <Group listening={false}>
       {segments.map(({ wall, a, b }) => (
-        <DimensionLine key={wall.id} a={a} b={b} thickness={wall.thickness} px={px} />
+        <DimensionLine
+          key={wall.id}
+          a={a}
+          b={b}
+          thickness={wall.thickness}
+          px={px}
+          side={dimensionSide(a, b, wall.thickness, rooms)}
+        />
       ))}
     </Group>
   )

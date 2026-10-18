@@ -106,10 +106,9 @@ export function resolvePoint(floor: Floor, ref: PointRef): { floor: Floor; corne
   const p = roundVec(ref)
   const same = floor.corners.find((c) => c.x === p.x && c.y === p.y)
   if (same) return { floor, cornerId: same.id }
-  if (ref.wallId) {
-    const wallId = findWallThrough(floor, p, ref.wallId)
-    if (wallId) return splitWall(floor, wallId, p)
-  }
+  // 스냅이 벽을 알려주지 않았더라도 점이 벽 위에 있으면 분할해서 연결한다.
+  const wallId = findWallThrough(floor, p, ref.wallId)
+  if (wallId) return splitWall(floor, wallId, p)
   const corner: Corner = { id: newId('c'), ...p }
   return { floor: { ...floor, corners: [...floor.corners, corner] }, cornerId: corner.id }
 }

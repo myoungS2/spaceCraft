@@ -1,6 +1,7 @@
 import type { KonvaEventObject } from 'konva/lib/Node'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Circle, Group, Layer, Line, Stage } from 'react-konva'
+import { roomPolygon } from '../geometry/rooms'
 import { snapPoint, snapToGrid, type SnapOptions, type SnapResult } from '../geometry/snap'
 import { add, dot, normalize, perp, scale, sub, type Vec } from '../geometry/vec'
 import {
@@ -18,6 +19,7 @@ import type { Floor } from '../model/schema'
 import { beginGesture, cancelGesture, endGesture, selectFloor, useDocStore } from '../store/docStore'
 import { useUiStore } from '../store/uiStore'
 import { Grid } from './Grid'
+import { RoomLabels, RoomShapes, type RoomView } from './RoomShapes'
 import { useElementSize } from './useElementSize'
 import { screenToWorld, zoomAt } from './viewport'
 import { COLORS, CornerHandles, DimensionLine, DimensionLines, WallShapes, wallPolygon } from './WallShapes'
@@ -57,6 +59,11 @@ export function Editor2D() {
   const floor = useDocStore(selectFloor)
   const gridSnap = useDocStore((s) => s.doc.settings.gridSnap)
   const segments = useMemo(() => wallSegments(floor), [floor])
+  const rooms = useMemo<RoomView[]>(() => {
+    const corners = new Map(floor.corners.map((c) => [c.id, c]))
+    return floor.rooms.map((room) => ({ room, polygon: roomPolygon(room, corners) }))
+  }, [floor.rooms, floor.corners])
+  const roomPolygons = useMemo(() => rooms.map((r) => r.polygon), [rooms])
 
   const [drawing, setDrawing] = useState<DrawState | null>(null)
   const [cursor, setCursor] = useState<SnapResult | null>(null)
@@ -253,6 +260,7 @@ export function Editor2D() {
     const name = e.target.name()
     if (name === 'corner') startCornerDrag(e.target.id())
     else if (name === 'wall') startWallDrag(e.target.id(), world)
+    else if (name === 'room') useUiStore.getState().select({ kind: 'room', id: e.target.id() })
     else useUiStore.getState().select(null)
   }
 
@@ -290,8 +298,10 @@ export function Editor2D() {
             <Grid viewport={viewport} width={size.width} height={size.height} gridSnap={gridSnap} />
           </Layer>
           <Layer>
+            <RoomShapes rooms={rooms} selection={selection} px={px} interactive={mode === 'draw' && !wallToolActive} />
             <WallShapes segments={segments} selection={selection} px={px} interactive={mode === 'draw' && !wallToolActive} />
-            <DimensionLines segments={segments} px={px} />
+            <DimensionLines segments={segments} rooms={roomPolygons} px={px} />
+            <RoomLabels rooms={rooms} px={px} />
             {mode === 'draw' && tool === 'select' && (
               <CornerHandles corners={floor.corners} selection={selection} px={px} />
             )}

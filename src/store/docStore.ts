@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
+import { syncRooms } from '../geometry/rooms'
 import { createEmptyDoc } from '../model/defaults'
 import type { Doc, Floor, Settings } from '../model/schema'
 
@@ -11,7 +12,7 @@ export interface DocState {
   doc: Doc
   /** 불러오기/복원 등 문서 전체 교체. 히스토리는 호출 측에서 비운다(resetHistory). */
   replaceDoc: (doc: Doc) => void
-  /** 현재 층(MVP는 floors[0])을 불변 업데이트한다. */
+  /** 현재 층(MVP는 floors[0])을 불변 업데이트한다. 벽 구조가 바뀌면 rooms를 자동으로 다시 계산한다. */
   updateFloor: (recipe: (floor: Floor) => Floor) => void
   updateSettings: (patch: Partial<Settings>) => void
 }
@@ -20,12 +21,14 @@ export const useDocStore = create<DocState>()(
   temporal(
     (set) => ({
       doc: createEmptyDoc(),
-      replaceDoc: (doc) => set({ doc }),
+      // 불러온 문서도 rooms를 벽 구조에 맞춰 둔다(이전 버전에서 저장된 문서 대비).
+      replaceDoc: (doc) => set({ doc: { ...doc, floors: doc.floors.map((f) => syncRooms(f, f)) } }),
       updateFloor: (recipe) =>
         set((s) => {
           const [first, ...rest] = s.doc.floors
           if (!first) return s
-          const next = recipe(first)
+          // 벽 구조가 바뀌면 같은 set 안에서 rooms도 다시 계산한다(히스토리 1건).
+          const next = syncRooms(first, recipe(first))
           if (next === first) return s
           return { doc: { ...s.doc, floors: [next, ...rest] } }
         }),

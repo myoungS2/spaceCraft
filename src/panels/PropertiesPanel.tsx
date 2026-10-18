@@ -1,8 +1,11 @@
+import { areaM2, ROOM_COLORS, roomPolygon } from '../geometry/rooms'
 import { getSegment, moveCorner, setWallLength, updateWall } from '../geometry/walls'
 import { distance } from '../geometry/vec'
 import { deleteSelection } from '../store/actions'
 import { selectFloor, useDocStore } from '../store/docStore'
+import type { Room } from '../model/schema'
 import { useUiStore } from '../store/uiStore'
+import { ColorField } from './ColorField'
 import { NumberField } from './NumberField'
 import { TextField } from './TextField'
 
@@ -16,6 +19,8 @@ export function PropertiesPanel() {
     body = <WallProps wallId={selection.id} />
   } else if (selection?.kind === 'corner' && floor.corners.some((c) => c.id === selection.id)) {
     body = <CornerProps cornerId={selection.id} />
+  } else if (selection?.kind === 'room' && floor.rooms.some((r) => r.id === selection.id)) {
+    body = <RoomProps roomId={selection.id} />
   }
 
   return (
@@ -84,6 +89,32 @@ function CornerProps({ cornerId }: { cornerId: string }) {
       <button className="danger" onClick={deleteSelection}>
         꼭짓점과 연결된 벽 삭제
       </button>
+    </>
+  )
+}
+
+function RoomProps({ roomId }: { roomId: string }) {
+  const floor = useDocStore(selectFloor)
+  const updateFloor = useDocStore((s) => s.updateFloor)
+  const room = floor.rooms.find((r) => r.id === roomId)
+  if (!room) return null
+  const polygon = roomPolygon(room, new Map(floor.corners.map((c) => [c.id, c])))
+  const patch = (p: Partial<Room>) =>
+    updateFloor((f) => ({ ...f, rooms: f.rooms.map((r) => (r.id === roomId ? { ...r, ...p } : r)) }))
+
+  return (
+    <>
+      <h3>방</h3>
+      <TextField label="이름" value={room.name} onCommit={(name) => patch({ name })} />
+      <div className="field">
+        <span>바닥색</span>
+        <ColorField value={room.floorColor} swatches={ROOM_COLORS} onCommit={(floorColor) => patch({ floorColor })} />
+      </div>
+      <div className="field">
+        <span>면적</span>
+        <strong className="readonly">{areaM2(polygon).toFixed(1)} m²</strong>
+      </div>
+      <p className="muted">방은 닫힌 벽으로 자동 생성되며, 벽을 지우면 함께 사라집니다.</p>
     </>
   )
 }
