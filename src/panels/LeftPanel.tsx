@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { catalog, catalogCategories } from '../data/catalog'
+import { catalog, catalogCategories, CATALOG_DRAG_TYPE } from '../data/catalog'
+import { placeCatalogItem } from '../store/actions'
 import { useUiStore, type DrawTool, type EditorMode } from '../store/uiStore'
 
 const modes: { id: EditorMode; label: string }[] = [
@@ -92,6 +93,7 @@ function Catalog() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
+      <p className="muted">끌어다 놓거나 클릭해서 배치 · R 회전 · Ctrl/Cmd+D 복제</p>
       <div className="chips">
         <button aria-pressed={category === null} onClick={() => setCategory(null)}>
           전체
@@ -104,11 +106,22 @@ function Catalog() {
       </div>
       <ul className="catalog">
         {items.map((e) => (
-          <li key={e.id} className="catalog-item" data-catalog-id={e.id}>
-            <span className="name">{e.name}</span>
-            <span className="dims">
-              {e.width}×{e.depth}×{e.height}
-            </span>
+          <li key={e.id}>
+            <button
+              className="catalog-item"
+              draggable
+              title="캔버스로 끌어다 놓거나 클릭해서 화면 가운데에 배치"
+              onDragStart={(ev) => {
+                ev.dataTransfer.setData(CATALOG_DRAG_TYPE, e.id)
+                ev.dataTransfer.effectAllowed = 'copy'
+              }}
+              onClick={() => placeCatalogItem(e.id)}
+            >
+              <span className="name">{e.name}</span>
+              <span className="dims">
+                {e.width}×{e.depth}×{e.height}
+              </span>
+            </button>
           </li>
         ))}
         {items.length === 0 && <li className="empty">검색 결과가 없습니다.</li>}

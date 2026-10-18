@@ -28,6 +28,8 @@ export interface UiState {
   view: ViewMode
   selection: Selection
   viewport: Viewport
+  /** 2D 캔버스 크기(px). 카탈로그 클릭 시 화면 가운데에 놓을 때 쓴다. */
+  canvasSize: { width: number; height: number }
   wallsTransparent: boolean
   saveStatus: SaveStatus
   /** 사용자에게 보여줄 오류(불러오기 실패 등) */
@@ -37,6 +39,7 @@ export interface UiState {
   setView: (view: ViewMode) => void
   select: (selection: Selection) => void
   setViewport: (viewport: Viewport) => void
+  setCanvasSize: (size: { width: number; height: number }) => void
   toggleWallsTransparent: () => void
   setSaveStatus: (status: SaveStatus) => void
   setBanner: (banner: string | null) => void
@@ -49,6 +52,7 @@ export const useUiStore = create<UiState>()((set) => ({
   selection: null,
   // 기본 0.1 → 1px = 10mm
   viewport: { x: 80, y: 80, scale: 0.1 },
+  canvasSize: { width: 0, height: 0 },
   wallsTransparent: false,
   saveStatus: 'idle',
   banner: null,
@@ -57,6 +61,7 @@ export const useUiStore = create<UiState>()((set) => ({
   setView: (view) => set({ view }),
   select: (selection) => set({ selection }),
   setViewport: (viewport) => set({ viewport }),
+  setCanvasSize: (canvasSize) => set({ canvasSize }),
   toggleWallsTransparent: () => set((s) => ({ wallsTransparent: !s.wallsTransparent })),
   setSaveStatus: (saveStatus) => set({ saveStatus }),
   setBanner: (banner) => set({ banner }),

@@ -1,6 +1,8 @@
 import type { KonvaEventObject } from 'konva/lib/Node'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent } from 'react'
 import { Circle, Group, Layer, Line, Stage } from 'react-konva'
+import { CATALOG_DRAG_TYPE } from '../data/catalog'
+import { moveItem, rotateItemTo, snapAngle } from '../geometry/items'
 import { addOpening, moveOpening, OPENING_DEFAULTS, placeOpening } from '../geometry/openings'
 import { roomPolygon } from '../geometry/rooms'
 import { snapPoint, snapToGrid, type SnapOptions, type SnapResult } from '../geometry/snap'
@@ -19,9 +21,11 @@ import {
 import { isTypingTarget } from '../hooks/useShortcuts'
 import { DEFAULT_WALL_THICKNESS } from '../model/defaults'
 import type { Floor, OpeningType } from '../model/schema'
+import { placeCatalogItem } from '../store/actions'
 import { beginGesture, cancelGesture, endGesture, selectFloor, useDocStore } from '../store/docStore'
 import { useUiStore } from '../store/uiStore'
 import { Grid } from './Grid'
+import { ItemShapes } from './ItemShapes'
 import { OpeningGlyph, OpeningShapes } from './OpeningShapes'
 import { RoomLabels, RoomShapes, type RoomView } from './RoomShapes'
 import { useElementSize } from './useElementSize'
@@ -75,6 +79,7 @@ const updateFloor = (recipe: (floor: Floor) => Floor) => useDocStore.getState().
 
 export function Editor2D() {
   const [containerRef, size] = useElementSize<HTMLDivElement>()
+  useEffect(() => useUiStore.getState().setCanvasSize(size), [size])
   const viewport = useUiStore((s) => s.viewport)
   const mode = useUiStore((s) => s.mode)
   const tool = useUiStore((s) => s.tool)
@@ -249,6 +254,66 @@ export function Editor2D() {
     })
   }
 
+  /** 가구 이동: 잡은 지점 기준 이동량을 그리드에 맞춘다. 잠긴 가구는 선택만 된다. */
+  const startItemDrag = (itemId: string, startWorld: Vec) => {
+    useUiStore.getState().select({ kind: 'item', id: itemId })
+    const item = getFloor().items.find((i) => i.id === itemId)
+    if (!item || item.locked) return
+    const origin = { x: item.x, y: item.y }
+    let moved = false
+    startDrag({
+      move: (world) => {
+        const grid = useDocStore.getState().doc.settings.gridSnap
+        const dx = snapToGrid(world.x - startWorld.x, grid)
+        const dy = snapToGrid(world.y - startWorld.y, grid)
+        if (!moved && dx === 0 && dy === 0) return
+        if (!moved) {
+          moved = true
+          beginGesture()
+        }
+        updateFloor((f) => moveItem(f, itemId, { x: origin.x + dx, y: origin.y + dy }))
+      },
+      up: () => moved && endGesture(),
+      cancel: () => moved && cancelGesture(),
+    })
+  }
+
+  /** 회전 핸들: 가구 중심에서 커서 방향으로 돌리고 15° 단위로 맞춘다. */
+  const startItemRotate = (itemId: string) => {
+    const item = getFloor().items.find((i) => i.id === itemId)
+    if (!item || item.locked) return
+    const center = { x: item.x, y: item.y }
+    let moved = false
+    startDrag({
+      move: (world) => {
+        // 핸들은 가구 위쪽(로컬 -y)에 있으므로 화면 각도에 90°를 더한다.
+        const deg = (Math.atan2(world.y - center.y, world.x - center.x) * 180) / Math.PI + 90
+        const rotation = snapAngle(deg)
+        if (!moved) {
+          if (rotation === item.rotation) return
+          moved = true
+          beginGesture()
+        }
+        updateFloor((f) => rotateItemTo(f, itemId, rotation))
+      },
+      up: () => moved && endGesture(),
+      cancel: () => moved && cancelGesture(),
+    })
+  }
+
+  const onDragOver = (e: ReactDragEvent) => {
+    if (!e.dataTransfer.types.includes(CATALOG_DRAG_TYPE)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+
+  const onDrop = (e: ReactDragEvent) => {
+    const catalogId = e.dataTransfer.getData(CATALOG_DRAG_TYPE)
+    if (!catalogId) return
+    e.preventDefault()
+    placeCatalogItem(catalogId, clientToWorld(e.nativeEvent))
+  }
+
   const startCornerDrag = (cornerId: string) => {
     useUiStore.getState().select({ kind: 'corner', id: cornerId })
     let moved = false
@@ -331,11 +396,13 @@ export function Editor2D() {
       handleOpeningClick(world, openingTool)
       return
     }
-    if (mode !== 'draw') {
-      useUiStore.getState().select(null)
+    const name = e.target.name()
+    if (mode === 'furniture') {
+      if (name === 'item') startItemDrag(e.target.id(), world)
+      else if (name === 'item-rotate') startItemRotate(e.target.id())
+      else useUiStore.getState().select(null)
       return
     }
-    const name = e.target.name()
     if (name === 'opening') startOpeningDrag(e.target.id(), world)
     else if (name === 'corner') startCornerDrag(e.target.id())
     else if (name === 'wall') startWallDrag(e.target.id(), world)
@@ -371,7 +438,14 @@ export function Editor2D() {
   const hoverSeg = openingHover && segments.find((s) => s.wall.id === openingHover.wallId)
 
   return (
-    <div ref={containerRef} className="editor2d" style={{ cursor: cursorStyle }} onContextMenu={(e) => e.preventDefault()}>
+    <div
+      ref={containerRef}
+      className="editor2d"
+      style={{ cursor: cursorStyle }}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       {size.width > 0 && (
         <Stage
           width={size.width}
@@ -397,6 +471,8 @@ export function Editor2D() {
             <OpeningShapes segments={segments} selection={selection} px={px} interactive={mode === 'draw' && tool === 'select'} />
             <DimensionLines segments={segments} rooms={roomPolygons} px={px} />
             <RoomLabels rooms={rooms} px={px} />
+            {/* 가구는 방 이름 위에 그린다(겹치면 가구 이름이 읽히도록) */}
+            <ItemShapes items={floor.items} selection={selection} px={px} interactive={mode === 'furniture'} />
             {mode === 'draw' && tool === 'select' && (
               <CornerHandles corners={floor.corners} selection={selection} px={px} />
             )}

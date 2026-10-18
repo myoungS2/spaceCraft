@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { deleteSelection } from '../store/actions'
+import { deleteSelection, duplicateSelectedItem, rotateSelectedItem } from '../store/actions'
 import { docHistory } from '../store/docStore'
 import { useUiStore } from '../store/uiStore'
 
@@ -23,6 +23,11 @@ export function useShortcuts() {
         else docHistory().undo()
         return
       }
+      if (mod && key === 'd') {
+        e.preventDefault() // 브라우저 북마크 단축키 막기
+        duplicateSelectedItem()
+        return
+      }
       if (mod && key === 'y') {
         e.preventDefault()
         docHistory().redo()
@@ -39,6 +44,10 @@ export function useShortcuts() {
       }
       if (mod || e.altKey) return
       const ui = useUiStore.getState()
+      if (key === 'r' && ui.selection?.kind === 'item') {
+        rotateSelectedItem(e.shiftKey ? -15 : 15)
+        return
+      }
       if (ui.mode === 'draw' && key === 'v') ui.setTool('select')
       if (ui.mode === 'draw' && key === 'w') ui.setTool('wall')
       if (ui.mode === 'draw' && key === 'd') ui.setTool('door')

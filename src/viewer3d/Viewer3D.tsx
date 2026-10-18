@@ -1,13 +1,14 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { DirectionalLight, Vector3 } from 'three'
+import { PCFShadowMap, type DirectionalLight, type Vector3 } from 'three'
 import { roomPolygon } from '../geometry/rooms'
 import { wallSegments } from '../geometry/walls'
 import type { Corner } from '../model/schema'
 import { selectFloor, useDocStore } from '../store/docStore'
 import { useUiStore } from '../store/uiStore'
 import { mmToM, planToWorld } from '../utils/coords'
+import { ItemModel } from './ItemModel'
 import { FloorMesh, WallMesh } from './meshes'
 
 /** 도면 범위(3D 좌표, m). 꼭짓점이 없으면 원점 주변 5m. */
@@ -110,7 +111,7 @@ export default function Viewer3D() {
 
   return (
     <div className="viewer3d">
-      <Canvas shadows camera={{ fov: 45, near: 0.05, far: 500, position: [8, 8, 8] }}>
+      <Canvas shadows={{ type: PCFShadowMap }} camera={{ fov: 45, near: 0.05, far: 500, position: [8, 8, 8] }}>
         <color attach="background" args={['#eef1f5']} />
         <hemisphereLight args={['#ffffff', '#c3c8d0', 1.1]} />
         <SunLight bounds={bounds} />
@@ -132,6 +133,10 @@ export default function Viewer3D() {
             height={wall.height ?? floor.height}
             transparent={transparent}
           />
+        ))}
+
+        {floor.items.map((item) => (
+          <ItemModel key={item.id} item={item} />
         ))}
 
         <OrbitControls makeDefault maxPolarAngle={Math.PI / 2 - 0.05} minDistance={1} maxDistance={150} />

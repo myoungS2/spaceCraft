@@ -2,7 +2,9 @@ import { findOpening, MIN_OPENING_WIDTH, updateOpening, wallHeight, type Opening
 import { areaM2, ROOM_COLORS, roomPolygon } from '../geometry/rooms'
 import { getSegment, moveCorner, segmentLength, setWallLength, updateWall } from '../geometry/walls'
 import { distance } from '../geometry/vec'
-import { deleteSelection } from '../store/actions'
+import { catalogEntry } from '../data/catalog'
+import { itemDims, resetItemDims, updateItem, type ItemPatch } from '../geometry/items'
+import { deleteSelection, duplicateSelectedItem } from '../store/actions'
 import { selectFloor, useDocStore } from '../store/docStore'
 import type { Opening, Room } from '../model/schema'
 import { useUiStore } from '../store/uiStore'
@@ -22,6 +24,8 @@ export function PropertiesPanel() {
     body = <CornerProps cornerId={selection.id} />
   } else if (selection?.kind === 'opening' && findOpening(floor, selection.id)) {
     body = <OpeningProps openingId={selection.id} />
+  } else if (selection?.kind === 'item' && floor.items.some((i) => i.id === selection.id)) {
+    body = <ItemProps itemId={selection.id} />
   } else if (selection?.kind === 'room' && floor.rooms.some((r) => r.id === selection.id)) {
     body = <RoomProps roomId={selection.id} />
   }
@@ -148,6 +152,56 @@ function OpeningProps({ openingId }: { openingId: string }) {
       <button className="danger" onClick={deleteSelection}>
         {isDoor ? '문' : '창'} 삭제
       </button>
+    </>
+  )
+}
+
+function ItemProps({ itemId }: { itemId: string }) {
+  const item = useDocStore((s) => selectFloor(s).items.find((i) => i.id === itemId))
+  const updateFloor = useDocStore((s) => s.updateFloor)
+  if (!item) return null
+  const entry = catalogEntry(item.catalogId)
+  const dims = itemDims(item, entry)
+  const locked = item.locked
+  const patch = (p: ItemPatch) => updateFloor((f) => updateItem(f, itemId, p))
+  const customized = item.width !== undefined || item.depth !== undefined || item.height !== undefined
+
+  return (
+    <>
+      <h3>가구</h3>
+      <p className="readonly">
+        {entry.name} <span className="muted">· {entry.category}</span>
+      </p>
+      <div className="field-row">
+        <NumberField label="X" value={item.x} disabled={locked} onCommit={(x) => patch({ x })} />
+        <NumberField label="Y" value={item.y} disabled={locked} onCommit={(y) => patch({ y })} />
+      </div>
+      <NumberField label="회전" unit="°" value={item.rotation} disabled={locked} onCommit={(rotation) => patch({ rotation })} />
+      <div className="field-row">
+        <NumberField label="폭 (W)" value={dims.width} min={10} max={20000} disabled={locked} onCommit={(width) => patch({ width })} />
+        <NumberField label="깊이 (D)" value={dims.depth} min={10} max={20000} disabled={locked} onCommit={(depth) => patch({ depth })} />
+      </div>
+      <NumberField label="높이 (H)" value={dims.height} min={10} max={10000} disabled={locked} onCommit={(height) => patch({ height })} />
+      {customized && !locked && (
+        <button onClick={() => updateFloor((f) => resetItemDims(f, itemId))}>
+          기본 치수로 ({entry.width}×{entry.depth}×{entry.height})
+        </button>
+      )}
+      <label className="check">
+        <input type="checkbox" checked={locked} onChange={(e) => patch({ locked: e.target.checked })} />
+        잠금 (이동·회전·크기 변경 막기)
+      </label>
+      <div className="field-row">
+        <button onClick={duplicateSelectedItem}>복제</button>
+        <button className="danger" onClick={deleteSelection}>
+          삭제
+        </button>
+      </div>
+      {entry.license && entry.author !== 'placeholder' && (
+        <p className="muted">
+          모델: {entry.author} · {entry.license}
+        </p>
+      )}
     </>
   )
 }
