@@ -1,5 +1,5 @@
 import { createEmptyDoc } from '../model/defaults'
-import { docHistory, resetHistory, useDocStore } from './docStore'
+import { beginGesture, cancelGesture, docHistory, endGesture, resetHistory, useDocStore } from './docStore'
 import { initPersistence, SAVE_DEBOUNCE_MS, STORAGE_KEY, type DocStorage } from './persistence'
 import { useUiStore } from './uiStore'
 
@@ -34,6 +34,26 @@ describe('docStore 히스토리', () => {
     expect(useDocStore.getState().doc.floors[0]!.corners).toHaveLength(1)
     docHistory().redo()
     expect(useDocStore.getState().doc.floors[0]!.corners).toHaveLength(2)
+  })
+
+  it('제스처 안의 여러 변경은 히스토리 1건이 된다', () => {
+    addCorner(1)
+    beginGesture()
+    addCorner(2)
+    addCorner(3)
+    addCorner(4)
+    endGesture()
+    expect(docHistory().pastStates).toHaveLength(2)
+    docHistory().undo()
+    expect(useDocStore.getState().doc.floors[0]!.corners).toHaveLength(1)
+  })
+
+  it('cancelGesture는 시작 문서로 되돌리고 히스토리를 남기지 않는다', () => {
+    beginGesture()
+    addCorner(2)
+    cancelGesture()
+    expect(useDocStore.getState().doc.floors[0]!.corners).toHaveLength(0)
+    expect(docHistory().pastStates).toHaveLength(0)
   })
 
   it('변경 없는 updateFloor는 히스토리에 쌓이지 않는다', () => {

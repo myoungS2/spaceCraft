@@ -44,8 +44,48 @@ export const useDocStore = create<DocState>()(
 export const docHistory = () => useDocStore.temporal.getState()
 
 export function resetHistory() {
+  gestureSnapshot = undefined
   useDocStore.temporal.getState().clear()
 }
+
+/*
+ * 제스처(드래그 등) 하나를 히스토리 1건으로 묶는다.
+ * 시작 시 문서를 기억하고 기록을 멈춘다 → 종료 시 시작 문서로 잠깐 되돌린 뒤 기록을 재개하고
+ * 최종 문서를 다시 set 하면, zundo에는 "시작 → 최종" 한 건만 남는다.
+ */
+let gestureSnapshot: Doc | undefined
+
+export function beginGesture() {
+  if (gestureSnapshot) return
+  gestureSnapshot = useDocStore.getState().doc
+  useDocStore.temporal.getState().pause()
+}
+
+export function endGesture() {
+  const snapshot = gestureSnapshot
+  if (!snapshot) return
+  gestureSnapshot = undefined
+  const final = useDocStore.getState().doc
+  const temporalApi = useDocStore.temporal.getState()
+  if (final === snapshot) {
+    temporalApi.resume()
+    return
+  }
+  useDocStore.setState({ doc: snapshot })
+  temporalApi.resume()
+  useDocStore.setState({ doc: final })
+}
+
+/** 제스처를 취소하고 시작 시점 문서로 되돌린다(히스토리 변화 없음). */
+export function cancelGesture() {
+  const snapshot = gestureSnapshot
+  if (!snapshot) return
+  gestureSnapshot = undefined
+  useDocStore.setState({ doc: snapshot })
+  useDocStore.temporal.getState().resume()
+}
+
+export const isInGesture = () => gestureSnapshot !== undefined
 
 /** 현재 편집 중인 층. MVP는 1층만 UI에 노출한다. */
 export const selectFloor = (s: DocState): Floor => s.doc.floors[0]!

@@ -2,6 +2,8 @@ import { create } from 'zustand'
 
 export type EditorMode = 'draw' | 'furniture'
 export type ViewMode = '2d' | '3d'
+/** 도면 그리기 모드의 도구 */
+export type DrawTool = 'select' | 'wall'
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 export type Selection =
@@ -22,6 +24,7 @@ export interface Viewport {
 /** 문서가 아닌 화면 상태. undo/redo 대상이 아니다. */
 export interface UiState {
   mode: EditorMode
+  tool: DrawTool
   view: ViewMode
   selection: Selection
   viewport: Viewport
@@ -30,6 +33,7 @@ export interface UiState {
   /** 사용자에게 보여줄 오류(불러오기 실패 등) */
   banner: string | null
   setMode: (mode: EditorMode) => void
+  setTool: (tool: DrawTool) => void
   setView: (view: ViewMode) => void
   select: (selection: Selection) => void
   setViewport: (viewport: Viewport) => void
@@ -40,6 +44,7 @@ export interface UiState {
 
 export const useUiStore = create<UiState>()((set) => ({
   mode: 'draw',
+  tool: 'wall',
   view: '2d',
   selection: null,
   // 기본 0.1 → 1px = 10mm
@@ -48,6 +53,7 @@ export const useUiStore = create<UiState>()((set) => ({
   saveStatus: 'idle',
   banner: null,
   setMode: (mode) => set({ mode, selection: null }),
+  setTool: (tool) => set({ tool, selection: null }),
   setView: (view) => set({ view }),
   select: (selection) => set({ selection }),
   setViewport: (viewport) => set({ viewport }),

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { deleteSelection } from '../store/actions'
 import { docHistory } from '../store/docStore'
 import { useUiStore } from '../store/uiStore'
 
@@ -29,7 +30,17 @@ export function useShortcuts() {
       }
       if (e.key === 'Escape') {
         useUiStore.getState().select(null)
+        return
       }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        deleteSelection()
+        return
+      }
+      if (mod || e.altKey) return
+      const ui = useUiStore.getState()
+      if (ui.mode === 'draw' && key === 'v') ui.setTool('select')
+      if (ui.mode === 'draw' && key === 'w') ui.setTool('wall')
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
