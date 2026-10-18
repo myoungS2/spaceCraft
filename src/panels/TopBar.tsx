@@ -18,7 +18,7 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      <div className="brand">Roomie</div>
+      <div className="brand">spaceCraft</div>
       <div className="group">
         <button onClick={() => docHistory().undo()} disabled={!canUndo} title="실행취소 (Ctrl/Cmd+Z)">
           ↶ 실행취소

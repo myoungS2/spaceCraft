@@ -4,7 +4,9 @@ import type { Doc } from '../model/schema'
 import { resetHistory, useDocStore } from './docStore'
 import { useUiStore } from './uiStore'
 
-export const STORAGE_KEY = 'roomie:doc'
+export const STORAGE_KEY = 'spacecraft:doc'
+/** 이름을 바꾸기 전(Roomie) 저장 키. 새 키에 문서가 없으면 여기서 읽어 온다. */
+export const LEGACY_STORAGE_KEYS = ['roomie:doc']
 export const SAVE_DEBOUNCE_MS = 500
 
 export interface DocStorage {
@@ -22,7 +24,11 @@ export async function initPersistence(storage: DocStorage = idbStorage): Promise
   const ui = useUiStore.getState()
 
   try {
-    const raw = await storage.get(STORAGE_KEY)
+    let raw = await storage.get(STORAGE_KEY)
+    for (const key of LEGACY_STORAGE_KEYS) {
+      if (raw !== undefined) break
+      raw = await storage.get(key)
+    }
     if (raw !== undefined) {
       const result = parseDoc(raw)
       if (result.ok) {

@@ -42,4 +42,4 @@ export function catalogEntry(id: string): CatalogEntry {
 }
 
 /** 드래그앤드롭으로 카탈로그 id를 넘길 때 쓰는 MIME 타입 */
-export const CATALOG_DRAG_TYPE = 'application/x-roomie-catalog'
+export const CATALOG_DRAG_TYPE = 'application/x-spacecraft-catalog'

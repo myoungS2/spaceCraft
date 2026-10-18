@@ -22,7 +22,7 @@ class ModelErrorBoundary extends Component<{ fallback: ReactNode; children: Reac
     return { failed: true }
   }
   componentDidCatch(error: unknown) {
-    console.warn('[Roomie] 가구 모델을 불러오지 못해 박스로 대체합니다.', error)
+    console.warn('[spaceCraft] 가구 모델을 불러오지 못해 박스로 대체합니다.', error)
   }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children

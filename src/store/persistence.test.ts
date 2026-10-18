@@ -1,6 +1,6 @@
 import { createEmptyDoc } from '../model/defaults'
 import { beginGesture, cancelGesture, docHistory, endGesture, resetHistory, useDocStore } from './docStore'
-import { initPersistence, SAVE_DEBOUNCE_MS, STORAGE_KEY, type DocStorage } from './persistence'
+import { initPersistence, LEGACY_STORAGE_KEYS, SAVE_DEBOUNCE_MS, STORAGE_KEY, type DocStorage } from './persistence'
 import { useUiStore } from './uiStore'
 
 function memoryStorage(initial: Record<string, unknown> = {}) {
@@ -70,6 +70,15 @@ describe('initPersistence', () => {
     const stop = await initPersistence(storage)
     expect(useDocStore.getState().doc.floors[0]!.name).toBe('복원됨')
     expect(docHistory().pastStates).toHaveLength(0)
+    stop()
+  })
+
+  it('새 키에 문서가 없으면 이름 바꾸기 전 키에서 복원한다', async () => {
+    const saved = createEmptyDoc()
+    saved.floors[0]!.name = '옛 이름'
+    const { storage } = memoryStorage({ [LEGACY_STORAGE_KEYS[0]!]: saved })
+    const stop = await initPersistence(storage)
+    expect(useDocStore.getState().doc.floors[0]!.name).toBe('옛 이름')
     stop()
   })
 

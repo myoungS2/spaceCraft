@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "roomie-dev",
+      "name": "spacecraft-dev",
       "runtimeExecutable": "corepack",
       "runtimeArgs": ["pnpm", "dev", "--port", "5173", "--strictPort"],
       "port": 5173

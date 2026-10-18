@@ -1,4 +1,4 @@
-# Roomie — 인테리어 플래너 MVP
+# spaceCraft — 인테리어 플래너 MVP
 
 도면(벽·문·창)을 2D로 그리고 3D로 확인하며 가구를 배치하는 프론트 단독 웹앱. 저장은 IndexedDB.
 
