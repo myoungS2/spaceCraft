@@ -1,7 +1,7 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { catalogCategories, CATALOG_DRAG_TYPE, fullCatalog } from '../data/catalog'
 import { createCustomFurniture, isCustomFurnitureInUse, removeCustomFurniture } from '../model/customCatalog'
-import type { CustomFurniture } from '../model/schema'
+import type { CustomFurniture, FurnitureShape } from '../model/schema'
 import { placeCatalogItem } from '../store/actions'
 import { useDocStore } from '../store/docStore'
 import { useUiStore, type DrawTool, type EditorMode } from '../store/uiStore'
@@ -183,6 +183,7 @@ function AddFurnitureForm({
   onDone: (entry?: CustomFurniture) => void
 }) {
   const [form, setForm] = useState({ name: '', category: defaultCategory, width: '1000', depth: '600', height: '800' })
+  const [shape, setShape] = useState<FurnitureShape>('box')
   const [error, setError] = useState<string | null>(null)
   const updateCustomCatalog = useDocStore((s) => s.updateCustomCatalog)
   const field = (key: keyof typeof form) => ({
@@ -198,6 +199,7 @@ function AddFurnitureForm({
       width: Number(form.width),
       depth: Number(form.depth),
       height: Number(form.height),
+      shape,
     })
     if (!r.ok) {
       setError(r.error)
@@ -221,6 +223,13 @@ function AddFurnitureForm({
             <option key={c} value={c} />
           ))}
         </datalist>
+      </label>
+      <label className="field">
+        모양
+        <select value={shape} onChange={(e) => setShape(e.target.value as FurnitureShape)}>
+          <option value="box">사각형</option>
+          <option value="round">원형·타원형 (폭≠깊이면 타원)</option>
+        </select>
       </label>
       <div className="field-row three">
         {(['width', 'depth', 'height'] as const).map((k) => (

@@ -1,5 +1,5 @@
 import { newId } from './ids'
-import type { CustomFurniture, Doc } from './schema'
+import type { CustomFurniture, Doc, FurnitureShape } from './schema'
 
 export interface CustomFurnitureInput {
   name: string
@@ -7,6 +7,7 @@ export interface CustomFurnitureInput {
   width: number
   depth: number
   height: number
+  shape?: FurnitureShape
 }
 
 /** 입력을 정리해 새 항목을 만든다. 이름·카테고리가 비었거나 치수가 양의 정수 mm가 아니면 오류 메시지. */
@@ -18,7 +19,9 @@ export function createCustomFurniture(input: CustomFurnitureInput): { ok: true; 
   const dims = [input.width, input.depth, input.height].map((v) => Math.round(v))
   if (dims.some((v) => !Number.isFinite(v) || v <= 0)) return { ok: false, error: '치수는 0보다 큰 mm로 입력하세요.' }
   const [width, depth, height] = dims as [number, number, number]
-  return { ok: true, entry: { id: newId('f'), name, category, width, depth, height } }
+  const entry: CustomFurniture = { id: newId('f'), name, category, width, depth, height }
+  if (input.shape === 'round') entry.shape = 'round'
+  return { ok: true, entry }
 }
 
 /** 이 종류를 쓰는 가구가 문서에 있는지 */

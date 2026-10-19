@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo } from 'react'
-import { DoubleSide, ExtrudeGeometry, Path, Shape, ShapeGeometry, Vector2, type BufferGeometry } from 'three'
+import { DoubleSide, ExtrudeGeometry, Mesh, Path, Shape, ShapeGeometry, Vector2, type BufferGeometry } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { footprintPolygon, splitFootprint, toWallLocal, type WallFootprint } from '../geometry/wallJoints'
 import type { Vec } from '../geometry/vec'
@@ -9,6 +9,8 @@ import { removeCollinear, wallOutline } from './wallOutline'
 
 const WALL_COLOR = '#f7f5ff'
 const GLASS_COLOR = '#cfe7ff'
+/** 클릭(레이캐스트)을 받지 않게 한다. 투명 벽·유리 너머 가구를 잡을 수 있도록. */
+const noRaycast = () => null
 
 /** 위에서 본 다각형(벽 로컬 mm)을 높이만큼 세운다. 결과는 벽 로컬 m 좌표(x 벽 방향, y 높이, z 두께). */
 function extrudePlan(polygon: readonly Vec[], height: number): ExtrudeGeometry {
@@ -84,7 +86,7 @@ export const WallMesh = memo(
     const windows = wall.openings.filter((o) => o.type === 'window')
     return (
       <group position={planToWorld(a.x, a.y)} rotation-y={planDirectionToWorldY(b.x - a.x, b.y - a.y)}>
-        <mesh geometry={geometry} castShadow={!transparent} receiveShadow>
+        <mesh geometry={geometry} castShadow={!transparent} receiveShadow raycast={transparent ? noRaycast : Mesh.prototype.raycast}>
           <meshStandardMaterial
             color={WALL_COLOR}
             roughness={0.9}
@@ -95,7 +97,7 @@ export const WallMesh = memo(
           />
         </mesh>
         {windows.map((o) => (
-          <mesh key={o.id} position={[mmToM(o.offset), mmToM(o.sill + o.height / 2), 0]}>
+          <mesh key={o.id} position={[mmToM(o.offset), mmToM(o.sill + o.height / 2), 0]} raycast={noRaycast}>
             <boxGeometry args={[mmToM(o.width), mmToM(o.height), mmToM(10)]} />
             <meshStandardMaterial color={GLASS_COLOR} transparent opacity={0.3} roughness={0.1} depthWrite={false} />
           </mesh>

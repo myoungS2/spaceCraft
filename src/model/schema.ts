@@ -71,6 +71,9 @@ export const FloorSchema = z.object({
   items: z.array(ItemSchema),
 })
 
+/** 가구 윗면 모양. round는 폭×깊이에 내접하는 원/타원(폭≠깊이면 타원). 없으면 box. */
+export const FurnitureShapeSchema = z.enum(['box', 'round'])
+
 /** 사용자가 직접 추가한 가구 종류. 카탈로그 기본 항목과 같은 id 공간을 쓴다(item.catalogId). */
 export const CustomFurnitureSchema = z.object({
   id,
@@ -79,6 +82,7 @@ export const CustomFurnitureSchema = z.object({
   width: positiveMm,
   depth: positiveMm,
   height: positiveMm,
+  shape: FurnitureShapeSchema.optional(),
 })
 
 export const SettingsSchema = z.object({
@@ -100,6 +104,7 @@ export type Wall = z.infer<typeof WallSchema>
 export type Room = z.infer<typeof RoomSchema>
 export type Item = z.infer<typeof ItemSchema>
 export type Floor = z.infer<typeof FloorSchema>
+export type FurnitureShape = z.infer<typeof FurnitureShapeSchema>
 export type CustomFurniture = z.infer<typeof CustomFurnitureSchema>
 export type Settings = z.infer<typeof SettingsSchema>
 export type Doc = z.infer<typeof DocSchema>

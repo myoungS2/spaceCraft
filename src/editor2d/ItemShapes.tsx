@@ -1,5 +1,5 @@
-import { Circle, Group, Line, Rect, Text } from 'react-konva'
-import { catalogEntry } from '../data/catalog'
+import { Circle, Ellipse, Group, Line, Rect, Text } from 'react-konva'
+import { catalogEntry, entryShape } from '../data/catalog'
 import { itemDims } from '../geometry/items'
 import type { CustomFurniture, Item } from '../model/schema'
 import type { Selection } from '../store/uiStore'
@@ -27,23 +27,27 @@ export function ItemShapes({ items, custom, selection, px, interactive }: Props)
         const selected = selection?.kind === 'item' && selection.id === item.id
         const fontSize = Math.min(12 * px, depth / 3, width / 4)
         const handleY = -depth / 2 - ROTATE_HANDLE_PX * px
+        const round = entryShape(entry) === 'round'
+        const body = {
+          id: item.id,
+          name: 'item',
+          fill: selected ? 'rgba(238,237,255,0.92)' : 'rgba(255,255,255,0.85)',
+          stroke: selected ? COLORS.selected : '#77759c',
+          strokeWidth: (selected ? 2 : 1) * px,
+          dash: item.locked ? [5 * px, 3 * px] : undefined,
+        }
+        // 앞쪽 표시선 반폭. 타원은 가장자리 안쪽에 들어오도록 짧게.
+        const front = round ? width * 0.3 : width / 2
         return (
           <Group key={item.id} x={item.x} y={item.y} rotation={item.rotation}>
-            <Rect
-              id={item.id}
-              name="item"
-              x={-width / 2}
-              y={-depth / 2}
-              width={width}
-              height={depth}
-              fill={selected ? 'rgba(238,237,255,0.92)' : 'rgba(255,255,255,0.85)'}
-              stroke={selected ? COLORS.selected : '#77759c'}
-              strokeWidth={(selected ? 2 : 1) * px}
-              dash={item.locked ? [5 * px, 3 * px] : undefined}
-            />
+            {round ? (
+              <Ellipse {...body} radiusX={width / 2} radiusY={depth / 2} />
+            ) : (
+              <Rect {...body} x={-width / 2} y={-depth / 2} width={width} height={depth} />
+            )}
             {/* 앞쪽(깊이 +방향) 표시: 가구가 어느 쪽을 향하는지 */}
             <Line
-              points={[-width / 2, depth / 2 - 3 * px, width / 2, depth / 2 - 3 * px]}
+              points={[-front, depth / 2 - (round ? 6 : 3) * px, front, depth / 2 - (round ? 6 : 3) * px]}
               stroke={selected ? COLORS.selected : '#a9a6cc'}
               strokeWidth={2 * px}
               listening={false}

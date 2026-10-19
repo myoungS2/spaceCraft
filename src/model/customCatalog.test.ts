@@ -1,4 +1,4 @@
-import { catalogEntry, fullCatalog } from '../data/catalog'
+import { catalogEntry, entryShape, fullCatalog } from '../data/catalog'
 import { createCustomFurniture, isCustomFurnitureInUse, removeCustomFurniture } from './customCatalog'
 import { createEmptyDoc } from './defaults'
 import { parseDoc } from './migrate'
@@ -17,6 +17,13 @@ describe('createCustomFurniture', () => {
     const e = created()
     expect(e).toMatchObject({ name: '2인용 소파', category: '소파', width: 1600, depth: 900, height: 850 })
     expect(e.id.startsWith('f_')).toBe(true)
+  })
+
+  it('원형이면 shape를 남기고, 사각형이면 생략한다', () => {
+    const round = createCustomFurniture({ ...input, shape: 'round' })
+    expect(round.ok && round.entry.shape).toBe('round')
+    const box = createCustomFurniture({ ...input, shape: 'box' })
+    expect(box.ok && 'shape' in box.entry).toBe(false)
   })
 
   it('빈 이름·카테고리, 0 이하·숫자 아닌 치수는 거부한다', () => {
@@ -51,6 +58,14 @@ describe('카탈로그 조회', () => {
     expect(all.at(-1)).toMatchObject({ id: e.id, name: '2인용 소파' })
     expect(catalogEntry(e.id, [e]).width).toBe(1600)
     expect(catalogEntry(e.id).name).toBe('알 수 없는 가구')
+  })
+
+  it('기본 카탈로그에 원형·타원형 식탁이 있다', () => {
+    expect(entryShape(catalogEntry('table-round'))).toBe('round')
+    const oval = catalogEntry('table-oval')
+    expect(entryShape(oval)).toBe('round')
+    expect(oval.width).not.toBe(oval.depth)
+    expect(entryShape(catalogEntry('sofa-3'))).toBe('box')
   })
 })
 

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { CustomFurniture } from '../model/schema'
+import { FurnitureShapeSchema, type CustomFurniture, type FurnitureShape } from '../model/schema'
 import raw from './catalog.json'
 
 export const CatalogEntrySchema = z.object({
@@ -9,6 +9,8 @@ export const CatalogEntrySchema = z.object({
   width: z.number().int().positive(),
   depth: z.number().int().positive(),
   height: z.number().int().positive(),
+  /** 윗면 모양(원형 식탁 등). 없으면 사각 */
+  shape: FurnitureShapeSchema.optional(),
   /** public/models/ 아래 GLB 경로(예: "/models/sofa.glb"). 없으면 박스로 대체 렌더 */
   modelUrl: z.string().optional(),
   license: z.string(),
@@ -52,6 +54,8 @@ export function catalogEntry(id: string, custom: readonly CustomFurniture[] = []
     sourceUrl: '',
   }
 }
+
+export const entryShape = (e: Pick<CatalogEntry, 'shape'>): FurnitureShape => e.shape ?? 'box'
 
 /** 드래그앤드롭으로 카탈로그 id를 넘길 때 쓰는 MIME 타입 */
 export const CATALOG_DRAG_TYPE = 'application/x-spacecraft-catalog'

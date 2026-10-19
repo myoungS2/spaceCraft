@@ -30,6 +30,7 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
   개구부는 벽 분할로 소속 벽이 바뀔 수 있으니 `findOpening(floor, id)`로 찾는다.
 - room: 닫힌 벽 루프에서 자동 생성(`geometry/rooms.ts`). `docStore.updateFloor`가 벽 구조(topologyKey)가 바뀔 때마다 `syncRooms`로 같은 set 안에서 재계산한다. rooms를 직접 추가/삭제하지 말 것.
   이름·색 유지 규칙: cornerIds 집합이 같으면 그대로, 아니면 공유 corner가 많고(3개 이상, 또는 2개+다각형 겹침) 면적이 큰 순으로 이어받음
+- 가구 모양: 카탈로그·customCatalog 항목의 `shape?: 'box' | 'round'`(없으면 box). round는 폭×깊이에 내접하는 원/타원 — 2D Ellipse, 3D 박스 대체 렌더는 타원 기둥. 판별은 `entryShape(entry)`
 - item: `x,y` = 바운딩박스 중심, `rotation`(deg), `width/depth/height?` = 카탈로그 치수 오버라이드
   편집은 `geometry/items.ts`(잠긴 가구는 이동·회전·치수 변경 불가, 잠금 해제·삭제는 가능). 2D 깊이(+y)가 가구 앞쪽, 3D에서는 +Z. GLB는 bbox를 W×D×H에 축별로 맞추고, 실패하면 박스로 대체(ErrorBoundary).
 - 스키마 변경 시 `SCHEMA_VERSION` 올리고 `src/model/migrate.ts`의 `steps`에 변환 추가
@@ -41,6 +42,7 @@ React 19 + Vite + TS strict, react-konva(2D), @react-three/fiber v9 + drei(3D), 
 - 벽 접합부(마이터): `geometry/wallJoints.ts`의 `wallFootprints`가 corner마다 벽을 각도순 정렬해 이웃 벽 바깥선 교점으로 벽별 위에서 본 다각형을 만든다(corner 자신도 꼭짓점에 넣어 T자·십자 가운데를 빈틈없이 나눔). 바깥 끝이 두께/2×`MITER_LIMIT`(4)를 넘으면 bevel, 안쪽 교점이 벽 길이를 넘거나 180° 이어짐이면 직각으로 자른다. 2D `WallShapes`와 3D가 같은 다각형을 쓴다.
 - 3D 벽: 개구부 없으면 footprint를 높이만큼 세운다. 개구부가 있으면 `splitFootprint`로 [접합부 조각 | 두께 일정한 가운데 | 접합부 조각]으로 나눠 가운데만 `viewer3d/wallOutline.ts` 측면 외곽(바닥·천장에 닿는 개구부는 notch, 떠 있는 창만 hole)을 두께만큼 밀고 합친다(CSG 없음). 그래서 접합부 조각에 걸친 개구부 부분(꺾인 모서리 안쪽 두께/2 이내)은 막힌다. `WallMesh`는 wall·corner 참조와 footprint 좌표가 바뀐 벽만 다시 만든다(이웃 벽이 움직이면 접합부가 바뀌므로).
 - 테마: 브랜드 팔레트(#7B7CEB·#B8A8FF·#FFD1E6·#FFE38A·#CFE7FF)와 폰트(워드마크 Pixelify Sans, 본문 Nunito)는 `src/styles.css`의 `:root` 토큰. 캔버스 색은 `editor2d/WallShapes.tsx`의 `COLORS`, 3D는 `viewer3d`의 상수. 로고는 `public/logo.svg`(32×32 픽셀아트, 파비콘 겸용)
+- 3D 가구 편집: `viewer3d/ItemControls.tsx`. 클릭=선택(가구 모드), 끌기=포인터를 바닥 평면에 투영해 `worldToPlan` → 2D와 같은 `moveItem`(그리드 스냅), 선택 가구 둘레 고리 끌기=`rotationByDrag`(15° 스냅). 드래그 중 OrbitControls 끔, 제스처로 히스토리 1건, Esc 취소. 고리는 depthTest 없이 그려서 클릭도 가구보다 우선
 - `src/data/catalog.json` 가구 카탈로그, GLB는 `public/models/` (CC0만, 출처는 CREDITS.md)
 
 ## TODO

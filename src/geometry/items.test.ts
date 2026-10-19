@@ -11,6 +11,7 @@ import {
   resetItemDims,
   rotateItemBy,
   rotateItemTo,
+  rotationByDrag,
   snapAngle,
   updateItem,
 } from './items'
@@ -28,6 +29,16 @@ describe('각도', () => {
     expect(snapAngle(22)).toBe(15)
     expect(snapAngle(23)).toBe(30)
     expect(snapAngle(-8)).toBe(345)
+  })
+
+  it('rotationByDrag: 중심을 축으로 끈 만큼(화면 시계 방향 +) 돌리고 15°에 맞춘다', () => {
+    const c = { x: 1000, y: 1000 }
+    // 오른쪽 → 아래(y-down 화면에서 시계 방향 90°)
+    expect(rotationByDrag(0, c, { x: 2000, y: 1000 }, { x: 1000, y: 2000 })).toBe(90)
+    // 시작 각도에 더하고, 반시계로 끌면 줄어든다
+    expect(rotationByDrag(30, c, { x: 2000, y: 1000 }, { x: 1000, y: 0 })).toBe(300)
+    // 잡은 지점과 상관없이 상대 각도만 쓴다 + 스냅
+    expect(rotationByDrag(0, c, { x: 1000, y: 0 }, { x: 1250, y: 100 })).toBe(15)
   })
 })
 

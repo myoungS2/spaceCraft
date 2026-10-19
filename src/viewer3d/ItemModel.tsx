@@ -1,7 +1,8 @@
-import { useGLTF } from '@react-three/drei'
+import { Edges, useGLTF } from '@react-three/drei'
+import type { ThreeEvent } from '@react-three/fiber'
 import { Component, memo, Suspense, useMemo, type ReactNode } from 'react'
 import { Box3, Vector3, type Mesh, type Object3D } from 'three'
-import { catalogEntry } from '../data/catalog'
+import { catalogEntry, entryShape } from '../data/catalog'
 import { itemDims, type Dims } from '../geometry/items'
 import type { Item } from '../model/schema'
 import { useDocStore } from '../store/docStore'
@@ -30,12 +31,12 @@ class ModelErrorBoundary extends Component<{ fallback: ReactNode; children: Reac
   }
 }
 
-/** 모델이 없을 때: 치수(W×D×H) 박스. 바닥(y=0)에 놓인다. */
-function BoxFallback({ dims, color }: { dims: Dims; color: string }) {
+/** 모델이 없을 때: 치수(W×D×H) 박스, 원형이면 폭×깊이 타원 기둥. 바닥(y=0)에 놓인다. */
+function BoxFallback({ dims, color, round }: { dims: Dims; color: string; round: boolean }) {
   const [w, h, d] = [mmToM(dims.width), mmToM(dims.height), mmToM(dims.depth)]
   return (
-    <mesh position-y={h / 2} castShadow receiveShadow>
-      <boxGeometry args={[w, h, d]} />
+    <mesh position-y={h / 2} scale={round ? [w, h, d] : 1} castShadow receiveShadow>
+      {round ? <cylinderGeometry args={[0.5, 0.5, 1, 48]} /> : <boxGeometry args={[w, h, d]} />}
       <meshStandardMaterial color={color} roughness={0.7} />
     </mesh>
   )
@@ -71,15 +72,30 @@ function GlbModel({ url, dims }: { url: string; dims: Dims }) {
   return <primitive object={object} />
 }
 
-/** 가구 하나. 위치·회전은 coords.ts 변환을 거친다. */
-export const ItemModel = memo(function ItemModel({ item }: { item: Item }) {
+const SELECTED_COLOR = '#7b7ceb'
+const noRaycast = () => null
+
+interface ItemModelProps {
+  item: Item
+  selected?: boolean
+  onPointerDown?: (id: string, e: ThreeEvent<PointerEvent>) => void
+}
+
+/** 가구 하나. 위치·회전은 coords.ts 변환을 거친다. 선택되면 바운딩박스 외곽선을 그린다. */
+export const ItemModel = memo(function ItemModel({ item, selected = false, onPointerDown }: ItemModelProps) {
   const custom = useDocStore((s) => s.doc.customCatalog)
   const entry = catalogEntry(item.catalogId, custom)
   const dims = itemDims(item, entry)
-  const fallback = <BoxFallback dims={dims} color={CATEGORY_COLORS[entry.category] ?? '#b0b5bd'} />
+  const fallback = (
+    <BoxFallback dims={dims} color={CATEGORY_COLORS[entry.category] ?? '#b0b5bd'} round={entryShape(entry) === 'round'} />
+  )
 
   return (
-    <group position={planToWorld(item.x, item.y)} rotation-y={planRotationToWorldY(item.rotation)}>
+    <group
+      position={planToWorld(item.x, item.y)}
+      rotation-y={planRotationToWorldY(item.rotation)}
+      onPointerDown={onPointerDown && ((e) => onPointerDown(item.id, e))}
+    >
       {entry.modelUrl ? (
         <ModelErrorBoundary key={entry.modelUrl} fallback={fallback}>
           <Suspense fallback={fallback}>
@@ -88,6 +104,13 @@ export const ItemModel = memo(function ItemModel({ item }: { item: Item }) {
         </ModelErrorBoundary>
       ) : (
         fallback
+      )}
+      {selected && (
+        <mesh position-y={mmToM(dims.height) / 2} raycast={noRaycast}>
+          <boxGeometry args={[mmToM(dims.width) + 0.02, mmToM(dims.height) + 0.02, mmToM(dims.depth) + 0.02]} />
+          <meshBasicMaterial visible={false} />
+          <Edges color={SELECTED_COLOR} lineWidth={2} />
+        </mesh>
       )}
     </group>
   )

@@ -75,6 +75,15 @@ export function rotateItemTo(floor: Floor, id: string, deg: number): Floor {
   return mapItem(floor, id, (it) => (it.locked || it.rotation === rotation ? it : { ...it, rotation }))
 }
 
+/**
+ * 중심 center를 축으로 포인터가 from → to로 움직인 만큼 start에서 돌린 각도(step° 스냅).
+ * 평면(y-down) 각도이므로 화면에서 시계 방향이 +로, item.rotation과 같은 방향이다.
+ */
+export function rotationByDrag(start: number, center: Vec, from: Vec, to: Vec, step = ROTATION_SNAP): number {
+  const angle = (p: Vec) => (Math.atan2(p.y - center.y, p.x - center.x) * 180) / Math.PI
+  return snapAngle(start + angle(to) - angle(from), step)
+}
+
 /** 현재 각도에서 step만큼 돌리고 15° 격자에 맞춘다. */
 export function rotateItemBy(floor: Floor, id: string, step: number): Floor {
   const it = floor.items.find((i) => i.id === id)

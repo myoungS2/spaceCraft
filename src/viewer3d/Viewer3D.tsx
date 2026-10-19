@@ -9,7 +9,7 @@ import type { Corner } from '../model/schema'
 import { selectFloor, useDocStore } from '../store/docStore'
 import { useUiStore } from '../store/uiStore'
 import { mmToM, planToWorld } from '../utils/coords'
-import { ItemModel } from './ItemModel'
+import { Items3D } from './ItemControls'
 import { FloorMesh, WallMesh } from './meshes'
 
 /** 도면 범위(3D 좌표, m). 꼭짓점이 없으면 원점 주변 5m. */
@@ -113,7 +113,14 @@ export default function Viewer3D() {
 
   return (
     <div className="viewer3d">
-      <Canvas shadows={{ type: PCFShadowMap }} camera={{ fov: 45, near: 0.05, far: 500, position: [8, 8, 8] }}>
+      <Canvas
+        shadows={{ type: PCFShadowMap }}
+        camera={{ fov: 45, near: 0.05, far: 500, position: [8, 8, 8] }}
+        // 가구가 아닌 곳을 클릭하면(카메라 드래그는 제외) 선택을 푼다.
+        onPointerMissed={() => {
+          if (useUiStore.getState().selection?.kind === 'item') useUiStore.getState().select(null)
+        }}
+      >
         <color attach="background" args={['#eeedfb']} />
         <hemisphereLight args={['#ffffff', '#cfcbea', 1.1]} />
         <SunLight bounds={bounds} />
@@ -142,9 +149,7 @@ export default function Viewer3D() {
           )
         })}
 
-        {floor.items.map((item) => (
-          <ItemModel key={item.id} item={item} />
-        ))}
+        <Items3D items={floor.items} />
 
         <OrbitControls makeDefault maxPolarAngle={Math.PI / 2 - 0.05} minDistance={1} maxDistance={150} />
         <CameraFit bounds={bounds} fitKey={fitKey} />
@@ -156,7 +161,7 @@ export default function Viewer3D() {
         </button>
         <button onClick={() => setFitKey((k) => k + 1)}>시점 맞춤</button>
       </div>
-      <div className="viewer3d-help">드래그: 회전 · 우클릭 드래그: 이동 · 휠: 줌</div>
+      <div className="viewer3d-help">드래그: 회전 · 우클릭 드래그: 이동 · 휠: 줌 · 가구 끌기: 이동 · 고리 끌기/R: 방향</div>
     </div>
   )
 }
