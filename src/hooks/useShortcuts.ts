@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
-import { deleteSelection, duplicateSelectedItem, rotateSelectedItem } from '../store/actions'
-import { docHistory } from '../store/docStore'
+import { deleteSelection, duplicateSelectedItem, redo, rotateSelectedItem, undo } from '../store/actions'
 import { useUiStore } from '../store/uiStore'
 
 /** 텍스트 입력 중에는 단축키를 무시한다. */
@@ -19,8 +18,8 @@ export function useShortcuts() {
 
       if (mod && key === 'z') {
         e.preventDefault()
-        if (e.shiftKey) docHistory().redo()
-        else docHistory().undo()
+        if (e.shiftKey) redo()
+        else undo()
         return
       }
       if (mod && key === 'd') {
@@ -30,7 +29,7 @@ export function useShortcuts() {
       }
       if (mod && key === 'y') {
         e.preventDefault()
-        docHistory().redo()
+        redo()
         return
       }
       if (e.key === 'Escape') {
