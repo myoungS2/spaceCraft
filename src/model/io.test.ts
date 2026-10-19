@@ -43,6 +43,6 @@ describe('JSON 내보내기·불러오기', () => {
   })
 
   it('파일 이름은 로컬 시각', () => {
-    expect(exportFileName(new Date(2026, 9, 18, 9, 5))).toBe('roomie-20261018-0905.json')
+    expect(exportFileName(new Date(2026, 9, 18, 9, 5))).toBe('spacecraft-20261018-0905.json')
   })
 })
